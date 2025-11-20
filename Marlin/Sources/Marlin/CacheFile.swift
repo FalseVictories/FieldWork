@@ -54,6 +54,15 @@ final class CacheFile<T>: Sendable {
         self.url = url
         self.fd = fd
     }
+    
+    deinit {
+        Logger.cacheFile.debug("Cleaning up \(self.url.path())")
+        do {
+            try FileManager.default.removeItem(at: self.url)
+        } catch {
+            Logger.cacheFile.debug("Error: \(error)")
+        }
+    }
 }
 
 extension CacheFile {
