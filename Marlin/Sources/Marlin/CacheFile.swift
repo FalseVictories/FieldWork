@@ -58,9 +58,10 @@ final class CacheFile<T>: Sendable {
 
 extension CacheFile {
     func createMappedRegion(with data: UnsafeBufferPointer<T>) throws -> MappedRegion<T> {
+        let rawData = UnsafeRawBufferPointer(data)
         let fileOffset = try writeData(UnsafeRawBufferPointer(data))
         
-        let region = MappedRegion(cacheFile: self, fileOffset: fileOffset, byteLength: data.count)
+        let region = MappedRegion(cacheFile: self, fileOffset: fileOffset, byteLength: rawData.count)
         try region.mapData()
         
         return region

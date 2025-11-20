@@ -82,12 +82,10 @@ class FileSampleBlock: SampleBlock {
 extension FileSampleBlock {
     static private func createCachePointData(fromBlockData data: UnsafeBufferPointer<Float>) throws -> UnsafeBufferPointer<SampleChannel.CachePoint> {
         Logger.fileSampleBlock.debug("Calculating cachepoints for \(data.count) samples")
-        let numberOfCachePoints = data.count / SampleChannel.CachePoint.samplesPerCachePoint
+        var numberOfCachePoints = data.count / SampleChannel.CachePoint.samplesPerCachePoint
         
         if data.count % SampleChannel.CachePoint.samplesPerCachePoint != 0 {
-            // FIXME: do we need to add an extra cachepoint, or do we just drop those samples?
-            // Logging to see if it's ever an actual issue
-            Logger.fileSampleBlock.debug("Cachepoint dropped \(data.count % SampleChannel.CachePoint.samplesPerCachePoint) samples")
+            numberOfCachePoints += 1
         }
         
         let cachePointsBuffer = UnsafeMutableBufferPointer<SampleChannel.CachePoint>.allocate(capacity: numberOfCachePoints)
