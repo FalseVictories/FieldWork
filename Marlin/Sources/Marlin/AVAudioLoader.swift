@@ -4,12 +4,13 @@ import OSLog
 
 final public class AVAudioLoader {
     static let BUFFER_SIZE: AVAudioFrameCount = 1024 * 1024 // 1mb buffer - about 6 seconds of audio
-    public init() {
-    }
+    
+    public init() {}
 }
 
 extension AVAudioLoader: AudioLoader {
-    public func importSample(from url: URL) async throws -> [SampleChannel] {
+    public func importSample(from url: URL,
+                             channelBuilder: ChannelBuilder) async throws -> [SampleChannel] {
         let sourceFile: AVAudioFile
         let format: AVAudioFormat
         
@@ -26,7 +27,7 @@ extension AVAudioLoader: AudioLoader {
         Logger.audioLoader.info("Format: \(format)")
         Logger.audioLoader.info("Frames: \(sourceFile.length)")
         
-        let newChannels = try (0..<format.channelCount).compactMap { _ in try SampleChannel() }
+        let newChannels = try (0..<format.channelCount).compactMap { _ in try channelBuilder() }
         
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()

@@ -6,5 +6,7 @@ extension Logger {
 }
 
 public protocol AudioLoader {
-    func importSample(from url: URL) async throws -> [SampleChannel]
+    typealias ChannelBuilder = @Sendable () throws -> SampleChannel
+    func importSample(from url: URL,
+                      channelBuilder: ChannelBuilder) async throws -> [SampleChannel]
 }

@@ -3,7 +3,15 @@ import SwiftUI
 
 struct ContentView: View {
     static let sampleUrl = URL(filePath: "/Users/iain/Music/Logic/Bounces/example-right-channel-stereo.wav")
-    @State var sample: Sample = Sample()
+    @State var sample: Sample
+    
+    init() {
+        if let s = Sample() {
+            _sample = .init(initialValue: s)
+        } else {
+            fatalError()
+        }
+    }
     
     var body: some View {
         VStack {

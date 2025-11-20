@@ -17,7 +17,17 @@ final public class Sample {
     
     var channels: [SampleChannel] = []
     
-    public init() {
+    let sampleBlockFactory: any SampleBlockFactory
+    public init?() {
+        do {
+            sampleBlockFactory = try DefaultSampleBlockFactory()
+        } catch {
+            return nil
+        }
+    }
+    
+    init(withSampleBlockFactory blockFactory: some SampleBlockFactory) {
+        sampleBlockFactory = blockFactory
     }
 }
 
@@ -29,7 +39,9 @@ extension Sample {
                 return
             }
             
-            let newChannels = try await audioLoader.importSample(from: url)
+            let newChannels = try await audioLoader.importSample(from: url) {
+                SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
+            }
             self.channels = newChannels
         }
     }

@@ -33,7 +33,7 @@ fileprivate let cachesUrl: URL = {
     return cacheUrl
 }()
 
-class CacheFile<T> {
+final class CacheFile<T>: Sendable {
     class func createCacheFile(withExtension ext: String) throws -> CacheFile {
         let uniqueFilename = "FieldWork-\(ProcessInfo().globallyUniqueString).\(ext)"
         let url = cachesUrl.appending(path: uniqueFilename)
@@ -72,6 +72,7 @@ extension CacheFile {
         let bytesWritten = try fd.write(data, retryOnInterrupt: true)
         Logger.mappedRegion.debug("Wrote \(bytesWritten)")
         
+        // mmap only works on page alignments so pad the data
         var paddingBytes = (Int32(data.count) % pageSize)
         if paddingBytes > 0 {
             paddingBytes = pageSize - paddingBytes

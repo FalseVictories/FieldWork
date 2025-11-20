@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 @Observable
-public class SampleOperation {
+final public class SampleOperation: Sendable {
     var title: String?
     var description: String?
     var progress: Float = 0.0

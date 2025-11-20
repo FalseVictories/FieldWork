@@ -26,25 +26,18 @@ public class SampleChannel {
     var blockCount: UInt32 = 0
     var numberOfFrames: UInt64 = 0
     
-    private let dataFile: CacheFile<Float>
-    private let cachePointFile: CacheFile<SampleChannel.CachePoint>
+    // Factory used when creating a block from data
+    let blockFactory: any SampleBlockFactory
     
-    convenience init?() throws {
-        let dataFile = try CacheFile<Float>.createCacheFile(withExtension: "data")
-        let cachePointFile = try CacheFile<SampleChannel.CachePoint>.createCacheFile(withExtension: "cache")
-        self.init(withDataFile: dataFile, cachePointFile: cachePointFile)
-    }
-    
-    init(withDataFile dataFile: CacheFile<Float>, cachePointFile: CacheFile<SampleChannel.CachePoint>) {
-        self.dataFile = dataFile
-        self.cachePointFile = cachePointFile
+    init(withSampleBlockFactory blockFactory: any SampleBlockFactory) {
+        self.blockFactory = blockFactory
     }
 }
 
 extension SampleChannel {
     func appendData(_ data: UnsafeBufferPointer<Float>) throws {
         Logger.sampleChannel.debug("Appending \(data.count) samples")
-        let block = try FileSampleBlock(data: data, dataCacheFile: dataFile, cachePointFile: cachePointFile)
+        let block = try blockFactory.createSampleBlock(for: data)
         try appendBlock(block)
     }
 
