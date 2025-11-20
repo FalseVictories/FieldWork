@@ -16,6 +16,9 @@ final public class Sample {
     var currentOperation: SampleOperation?
     
     var channels: [SampleChannel] = []
+    var numberOfFrames: UInt64 {
+        channels.first?.numberOfFrames ?? 0
+    }
     
     let sampleBlockFactory: any SampleBlockFactory
     public init?() {
