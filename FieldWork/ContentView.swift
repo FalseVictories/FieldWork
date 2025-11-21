@@ -16,10 +16,13 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Button("Load Sample") {
-                print("Loading sample")
                 sample.loadSample(from: Self.sampleUrl,
                                   withAudioLoader: AVAudioLoader())
-                print("Sample loaded")
+            }
+            
+            if let operation = sample.currentOperation {
+                ProgressView(operation.title ?? "",
+                             value: operation.progress, total: 1.0)
             }
         }
         .padding()

@@ -10,10 +10,15 @@ final public class AVAudioLoader {
 
 extension AVAudioLoader: AudioLoader {
     public func importSample(from url: URL,
+                             operation: SampleOperation,
                              channelBuilder: ChannelBuilder) async throws -> AudioLoaderResult? {
         let sourceFile: AVAudioFile
         let format: AVAudioFormat
         let fileFormat: AVAudioFormat
+
+        await MainActor.run {
+            operation.progress = 0.0
+        }
         
         Logger.audioLoader.info("Loading: \(url.path(percentEncoded: true))")
         
@@ -108,6 +113,11 @@ extension AVAudioLoader: AudioLoader {
             }
             
             await Task.yield()
+            
+            let progress = Float(totalFrameCount) / Float(sourceFile.length)
+            await MainActor.run {
+                operation.progress = progress
+            }
         }
         
         // Stop the player node and engine.

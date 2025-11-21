@@ -13,15 +13,15 @@ enum SampleError: Error {
 @Observable
 @MainActor
 final public class Sample {
-    var currentOperation: SampleOperation?
+    public var currentOperation: SampleOperation?
     
-    var channels: [SampleChannel] = []
-    var numberOfFrames: UInt64 {
+    public var channels: [SampleChannel] = []
+    public var numberOfFrames: UInt64 {
         channels.first?.numberOfFrames ?? 0
     }
     
-    var bitDepth: Int = 0
-    var sampleRate: Double = 0
+    public var bitDepth: Int = 0
+    public var sampleRate: Double = 0
     
     let sampleBlockFactory: any SampleBlockFactory
     public init?() {
@@ -39,18 +39,21 @@ final public class Sample {
 
 extension Sample {
     public func loadSample(from url: URL, withAudioLoader audioLoader: some AudioLoader) {
-        currentOperation = SampleOperation(title: "Loading Sample")
+        let operation = SampleOperation(title: "Loading Sample")
+        currentOperation = operation
         Task { [weak self] in
             guard let self else {
                 return
             }
             
-            if let loadResult = try await (audioLoader.importSample(from: url) {
+            if let loadResult = try await (audioLoader.importSample(from: url, operation: operation) {
                 SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
             }) {
                 self.channels = loadResult.channels
                 self.bitDepth = loadResult.bitDepth
                 self.sampleRate = loadResult.sampleRate
+
+                currentOperation = nil
             }
         }
     }
