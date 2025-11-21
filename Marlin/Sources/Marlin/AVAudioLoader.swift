@@ -10,18 +10,20 @@ final public class AVAudioLoader {
 
 extension AVAudioLoader: AudioLoader {
     public func importSample(from url: URL,
-                             channelBuilder: ChannelBuilder) async throws -> [SampleChannel] {
+                             channelBuilder: ChannelBuilder) async throws -> AudioLoaderResult? {
         let sourceFile: AVAudioFile
         let format: AVAudioFormat
+        let fileFormat: AVAudioFormat
         
         Logger.audioLoader.info("Loading: \(url.path(percentEncoded: true))")
         
         do {
             sourceFile = try AVAudioFile(forReading: url)
             format = sourceFile.processingFormat
+            fileFormat = sourceFile.fileFormat
         } catch {
             Logger.audioLoader.error("Unable to open for reading: \(error.localizedDescription)")
-            return []
+            return nil
         }
         
         Logger.audioLoader.info("Format: \(format)")
@@ -45,7 +47,7 @@ extension AVAudioLoader: AudioLoader {
                                                  maximumFrameCount: maxFrames)
         } catch {
             Logger.audioLoader.error("Unable to enable manual rendering mode: \(error)")
-            return []
+            return nil
         }
         
         do {
@@ -53,7 +55,7 @@ extension AVAudioLoader: AudioLoader {
             player.play()
         } catch {
             Logger.audioLoader.error("Unable to start audio engine: \(error)")
-            return []
+            return nil
         }
         
         let buffer = AVAudioPCMBuffer(pcmFormat: engine.manualRenderingFormat,
@@ -95,14 +97,14 @@ extension AVAudioLoader: AudioLoader {
                     
                 case .error:
                     Logger.audioLoader.error("Error rendering audio")
-                    return []
+                    return nil
                     
                 @unknown default:
                     fatalError()
                 }
             } catch {
                 Logger.audioLoader.error("Rendering failed: \(error)")
-                return []
+                return nil
             }
             
             await Task.yield()
@@ -115,6 +117,13 @@ extension AVAudioLoader: AudioLoader {
         Logger.audioLoader.info("Frames: \(totalFrameCount)")
         Logger.audioLoader.info("Loading completed")
         
-        return newChannels
+        Logger.audioLoader.debug("Format: \(format)")
+        Logger.audioLoader.debug("\(format.settings)")
+        Logger.audioLoader.debug("File format: \(fileFormat)")
+        Logger.audioLoader.debug("\(fileFormat.settings)")
+        
+        return .init(bitDepth: fileFormat.settings[AVLinearPCMBitDepthKey] as? Int ?? 0,
+                     sampleRate: format.sampleRate,
+                     channels: newChannels)
     }
 }

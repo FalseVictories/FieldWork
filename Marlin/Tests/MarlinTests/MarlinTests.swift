@@ -21,7 +21,6 @@ func makeTestSample() throws -> Sample {
 
 @MainActor
 @Test func testSampleDataSmall() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
     let testSample = try makeTestSample()
     #expect(testSample.numberOfFrames == 44100)
     

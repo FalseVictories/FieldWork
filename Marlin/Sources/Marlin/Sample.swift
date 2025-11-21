@@ -20,6 +20,9 @@ final public class Sample {
         channels.first?.numberOfFrames ?? 0
     }
     
+    var bitDepth: Int = 0
+    var sampleRate: Double = 0
+    
     let sampleBlockFactory: any SampleBlockFactory
     public init?() {
         do {
@@ -42,10 +45,13 @@ extension Sample {
                 return
             }
             
-            let newChannels = try await audioLoader.importSample(from: url) {
+            if let loadResult = try await (audioLoader.importSample(from: url) {
                 SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
+            }) {
+                self.channels = loadResult.channels
+                self.bitDepth = loadResult.bitDepth
+                self.sampleRate = loadResult.sampleRate
             }
-            self.channels = newChannels
         }
     }
 }
