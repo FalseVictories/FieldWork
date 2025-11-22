@@ -5,6 +5,9 @@ class SampleBlock {
     var nextBlock: SampleBlock?
     var numberOfFrames: UInt64 = 0
     var startFrame: UInt64 = 0
+    var lastFrame: UInt64 {
+        startFrame + numberOfFrames - 1
+    }
     
     var reversed: Bool = false
 
