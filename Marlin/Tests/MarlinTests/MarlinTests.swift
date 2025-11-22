@@ -7,7 +7,7 @@ func makeTestSample(numberOfBlocks: Int = 1) throws -> Sample {
     if let sample = Sample() {
         let channel = SampleChannel(withSampleBlockFactory: try DefaultSampleBlockFactory())
         
-        for blockCount in 0..<numberOfBlocks {
+        for _ in 0..<numberOfBlocks {
             let data = UnsafeMutableBufferPointer<Float>.allocate(capacity: 44100)
             for i in 0..<44100 {
                 data[i] = sin(Float(i) * Float.pi / 180)
