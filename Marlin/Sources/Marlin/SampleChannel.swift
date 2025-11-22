@@ -40,7 +40,24 @@ extension SampleChannel {
         let block = try blockFactory.createSampleBlock(for: data)
         try appendBlock(block)
     }
+    
+    func sampleBlockForFrame(_ frame: UInt64) -> SampleBlock? {
+        var currentBlock = firstBlock
 
+        while currentBlock != nil {
+            let block = currentBlock!
+            if block.startFrame <= frame  && block.lastFrame >= frame {
+                return currentBlock
+            }
+            
+            currentBlock = block.nextBlock
+        }
+        
+        return nil
+    }
+}
+
+private extension SampleChannel {
     private func appendBlock(_ block: SampleBlock) throws {
         // If this is the very first block, start the list
         if firstBlock == nil {
