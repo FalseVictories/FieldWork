@@ -24,7 +24,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MarlinTests",
-            dependencies: ["Marlin"]
+            dependencies: ["Marlin"],
+            resources: [
+                .copy("Resources")
+            ]
         ),
     ]
 )

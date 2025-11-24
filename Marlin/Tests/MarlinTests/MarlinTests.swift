@@ -98,6 +98,19 @@ class FakeAudioLoader: AudioLoader {
 }
 
 @MainActor
+@Test func testAVAudioLoader() async throws {
+    let testSample = Sample()
+    let url = Bundle.module.url(forResource: "example-right-channel-stereo.wav", withExtension: nil, subdirectory: "Resources")!
+    testSample.loadSample(from: url, withAudioLoader: AVAudioLoader())
+    
+    try await Task.sleep(nanoseconds: 2_000_000_000)
+    
+    #expect(testSample.numberOfFrames == 96_000)
+    #expect(testSample.channels.count == 2)
+    #expect(testSample.bitDepth == 24)
+}
+
+@MainActor
 @Test func testSampleDataFrameAccess() throws {
     let testSample = try makeTestSample()
     #expect(testSample.numberOfFrames == 44100)
