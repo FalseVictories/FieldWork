@@ -10,7 +10,7 @@ enum SampleChannelError: Error {
 }
 
 public class SampleChannel {
-    public struct CachePoint {
+    public struct CachePoint: Equatable {
         static let samplesPerCachePoint: Int = 256
         
         public let minValue: Float
@@ -42,6 +42,11 @@ extension SampleChannel {
     }
     
     func sampleBlockForFrame(_ frame: UInt64) -> SampleBlock? {
+        if frame >= numberOfFrames {
+            Logger.sampleChannel.error("Requested sample block for frame \(frame), but only \(self.numberOfFrames) available")
+            return nil
+        }
+        
         var currentBlock = firstBlock
 
         while currentBlock != nil {
@@ -53,7 +58,8 @@ extension SampleChannel {
             currentBlock = block.nextBlock
         }
         
-        return nil
+        Logger.sampleChannel.error("Requested sample block for frame \(frame) but couldn't find it")
+        fatalError()
     }
 }
 

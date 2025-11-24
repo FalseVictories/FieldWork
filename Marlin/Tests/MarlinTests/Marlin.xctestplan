@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "0547E905-61E6-400E-95C7-6120B09F4943",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "MarlinTests",
+        "name" : "MarlinTests"
+      }
+    }
+  ],
+  "version" : 1
+}

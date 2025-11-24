@@ -28,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AE46E6EA2ED50B5C0032B4A2 /* Marlin.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Marlin.xctestplan; path = Marlin/Tests/MarlinTests/Marlin.xctestplan; sourceTree = "<group>"; };
 		AEB4256B2ECA869D00A918C1 /* FieldWork.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FieldWork.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEB425782ECA869F00A918C1 /* FieldWorkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FieldWorkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEB425822ECA869F00A918C1 /* FieldWorkUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FieldWorkUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,6 +82,7 @@
 		AEB425622ECA869D00A918C1 = {
 			isa = PBXGroup;
 			children = (
+				AE46E6EA2ED50B5C0032B4A2 /* Marlin.xctestplan */,
 				AEB425952ECA881600A918C1 /* Marlin */,
 				AEB4256D2ECA869D00A918C1 /* FieldWork */,
 				AEB4257B2ECA869F00A918C1 /* FieldWorkTests */,

@@ -24,12 +24,8 @@ final public class Sample {
     public var sampleRate: Double = 0
     
     let sampleBlockFactory: any SampleBlockFactory
-    public init?() {
-        do {
-            sampleBlockFactory = try DefaultSampleBlockFactory()
-        } catch {
-            return nil
-        }
+    public convenience init() {
+        self.init(withSampleBlockFactory: DefaultSampleBlockFactory())
     }
     
     init(withSampleBlockFactory blockFactory: some SampleBlockFactory) {
@@ -41,11 +37,7 @@ extension Sample {
     public func loadSample(from url: URL, withAudioLoader audioLoader: some AudioLoader) {
         let operation = SampleOperation(title: "Loading Sample")
         currentOperation = operation
-        Task { [weak self] in
-            guard let self else {
-                return
-            }
-            
+        Task { [unowned self] in            
             if let loadResult = try await (audioLoader.importSample(from: url, operation: operation) {
                 SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
             }) {
