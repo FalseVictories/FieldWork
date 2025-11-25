@@ -2,8 +2,8 @@ import Foundation
 
 class SampleBlock {
     protocol Methods: AnyObject {
-        func getData(at frame: UInt64) -> Float
-        func getCachePoint(at frame: UInt64) -> SampleChannel.CachePoint
+        func getData(atFrame frame: UInt64) -> Float
+        func getCachePoint(atCachePoint cachePoint: UInt64) -> SampleChannel.CachePoint
     }
     
     var previousBlock: SampleBlock?
@@ -20,20 +20,27 @@ class SampleBlock {
 }
 
 extension SampleBlock {
-    func data(at frame: UInt64) -> Float {
+    /// Get the data in the block at the frame position
+    /// - Parameter frame: the frame position relative to the start of the block
+    /// - Returns: the float data at that frame
+    func data(atFrame frame: UInt64) -> Float {
         guard let methods else {
             preconditionFailure("methods not set")
         }
         
-        return methods.getData(at: reversed ? reversedFrame(frame) : frame)
+        return methods.getData(atFrame: reversed ? reversedFrame(frame) : frame)
     }
     
-    func cachePoint(at frame: UInt64) -> SampleChannel.CachePoint {
+    /// Get the CachePoint data in the block at the frame position
+    /// - Parameter frame: the frame position relative to the start of the block
+    /// - Returns: the CachePoint data at that frame
+    func cachePoint(atFrame frame: UInt64) -> SampleChannel.CachePoint {
         guard let methods else {
             preconditionFailure("methods not set")
         }
 
-        return methods.getCachePoint(at: reversed ? reversedCachePointIndex(frame) : frame)
+        return methods.getCachePoint(atCachePoint: reversed ? reversedCachePointIndex(frame) :
+                                        frame / UInt64(SampleChannel.CachePoint.samplesPerCachePoint))
     }
     
     /// Add a block after this block, inserting it if this block isn't the end of the list

@@ -56,7 +56,7 @@ class FileSampleBlock: SampleBlock {
 }
 
 extension FileSampleBlock: SampleBlock.Methods {
-    func getData(at frame: UInt64) -> Float {
+    func getData(atFrame frame: UInt64) -> Float {
         guard frame < numberOfFrames else {
             Logger.fileSampleBlock.error("Out of bounds request: \(frame) is bigger than \(self.numberOfFrames)")
             return 0.0
@@ -72,7 +72,17 @@ extension FileSampleBlock: SampleBlock.Methods {
         return data[Int(frame + UInt64(dataRegionOffset))]
     }
     
-    func getCachePoint(at cachePoint: UInt64) -> SampleChannel.CachePoint {
+    func getCachePoint(atCachePoint cachePoint: UInt64) -> SampleChannel.CachePoint {
+        var numberOfCachePoints = Int(numberOfFrames) / SampleChannel.CachePoint.samplesPerCachePoint
+        if numberOfFrames % UInt64(SampleChannel.CachePoint.samplesPerCachePoint) != 0 {
+            numberOfCachePoints += 1
+        }
+        
+        guard cachePoint < numberOfCachePoints else {
+            Logger.fileSampleBlock.error("Out of bounds request: \(cachePoint) is bigger than \(numberOfCachePoints)")
+            return .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
+        }
+        
         guard let data = cachePointRegion.mappedData else {
             Logger.fileSampleBlock.error("Cachepoint region is not mapped")
             return .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
