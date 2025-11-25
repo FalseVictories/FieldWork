@@ -13,6 +13,8 @@ public struct AudioLoaderResult {
 
 public protocol AudioLoader {
     typealias ChannelBuilder = @Sendable () throws -> SampleChannel
+    
+    nonisolated(nonsending)
     func importSample(from url: URL,
                       operation: SampleOperation,
                       channelBuilder: ChannelBuilder) async throws -> AudioLoaderResult?

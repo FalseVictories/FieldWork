@@ -7,18 +7,17 @@ struct ContentView: View {
     @State var text: String = ""
     
     init() {
-        if let s = Sample() {
-            _sample = .init(initialValue: s)
-        } else {
-            fatalError()
-        }
+        let s = Sample()
+        _sample = .init(initialValue: s)
     }
     
     var body: some View {
         VStack {
             Button("Load Sample") {
-                sample.loadSample(from: Self.sampleUrl,
-                                  withAudioLoader: AVAudioLoader())
+                Task {
+                    try await sample.loadSample(from: Self.sampleUrl,
+                                                withAudioLoader: AVAudioLoader())
+                }
             }
             
             if let operation = sample.currentOperation {

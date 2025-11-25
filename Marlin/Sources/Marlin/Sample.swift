@@ -34,10 +34,10 @@ final public class Sample {
 }
 
 extension Sample {
-    public func loadSample(from url: URL, withAudioLoader audioLoader: some AudioLoader) {
+    public func loadSample(from url: URL, withAudioLoader audioLoader: some AudioLoader) async throws {
         let operation = SampleOperation(title: "Loading Sample")
         currentOperation = operation
-        Task { [unowned self] in            
+//        Task { [unowned self] in
             if let loadResult = try await (audioLoader.importSample(from: url, operation: operation) {
                 SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
             }) {
@@ -47,6 +47,6 @@ extension Sample {
 
                 currentOperation = nil
             }
-        }
+//        }
     }
 }
