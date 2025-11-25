@@ -36,9 +36,17 @@ extension SampleBlock {
         return methods.getCachePoint(at: reversed ? reversedCachePointIndex(frame) : frame)
     }
     
+    /// Add a block after this block, inserting it if this block isn't the end of the list
+    /// - Parameter block: block to be appended
     func appendBlock(_ block: SampleBlock) {
+        let oldNextBlock = nextBlock
+        
         nextBlock = block
         block.previousBlock = self
+        block.nextBlock = oldNextBlock
+        if let oldNextBlock {
+            oldNextBlock.previousBlock = block
+        }
     }
 }
 
