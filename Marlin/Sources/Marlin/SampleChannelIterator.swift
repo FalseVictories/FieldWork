@@ -61,4 +61,21 @@ public extension SampleChannelIterator {
         
         return value
     }
+    
+    func peekFrame() -> Float {
+        currentBlock?.data(atFrame: frameInBlock) ?? 0
+    }
+    
+    func peekNextFrame() -> Float {
+        guard var currentBlock else {
+            return 0
+        }
+        
+        let nextFrameInBlock = frameInBlock + 1
+        if nextFrameInBlock < UInt64(currentBlock.numberOfFrames) - 1 {
+            return currentBlock.data(atFrame: nextFrameInBlock)
+        }
+        
+        return currentBlock.nextBlock?.data(atFrame: 0) ?? 0
+    }
 }

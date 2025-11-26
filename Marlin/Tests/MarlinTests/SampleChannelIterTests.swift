@@ -89,3 +89,66 @@ import Testing
         #expect(count == testSample.numberOfFrames)
     }
 }
+
+@MainActor
+@Test func testPeekFrame() throws {
+    let testSample = try makeTestSample()
+    
+    let block = testSample.channels[0].firstBlock
+    #expect(block != nil)
+    
+    let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if let iter, let firstBlockData = block?.data(atFrame: 0) {
+        let peekedValue = iter.peekFrame()
+        #expect(peekedValue == firstBlockData)
+    }
+    
+    let iter2 = SampleChannelIterator(atFrame: 44099, inChannel: testSample.channels[0])
+    #expect(iter2 != nil)
+    
+    if var iter2 {
+        _ = iter2.nextFrameAndAdvance()
+        #expect(iter2.peekFrame() == 0)
+    }
+}
+
+@MainActor
+@Test func testPeekNextFrame() throws {
+    let testSample = try makeTestSample()
+    
+    let block = testSample.channels[0].firstBlock
+    #expect(block != nil)
+    
+    let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if let iter, let firstBlockData = block?.data(atFrame: 0) {
+        let peekedValue = iter.peekFrame()
+        #expect(peekedValue == firstBlockData)
+    }
+    
+    let iter2 = SampleChannelIterator(atFrame: 44099, inChannel: testSample.channels[0])
+    #expect(iter2 != nil)
+    
+    if let iter2 {
+        #expect(iter2.peekNextFrame() == 0)
+    }
+}
+
+@MainActor
+@Test func testPeekNextFrameAtEndOfBlock() throws {
+    let testSample = try makeTestSample(numberOfBlocks: 2)
+    
+    let block = testSample.channels[0].firstBlock?.nextBlock
+    #expect(block != nil)
+    
+    let iter = SampleChannelIterator(atFrame: 44099, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if let iter, let block {
+        let result = iter.peekNextFrame()
+        #expect(result == block.data(atFrame: 0))
+    }
+}
