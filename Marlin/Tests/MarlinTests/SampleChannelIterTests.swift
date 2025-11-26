@@ -74,3 +74,18 @@ import Testing
         }
     }
 }
+
+@MainActor
+@Test func testMultipleBlocks() throws {
+    let testSample = try makeTestSample(numberOfBlocks: 3)
+    let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if var iter {
+        var count = 0
+        while let _ = iter.nextFrameAndAdvance() {
+            count += 1
+        }
+        #expect(count == testSample.numberOfFrames)
+    }
+}
