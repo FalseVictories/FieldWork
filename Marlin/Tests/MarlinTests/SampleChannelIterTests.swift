@@ -124,16 +124,19 @@ import Testing
     let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
     #expect(iter != nil)
     
-    if let iter, let firstBlockData = block?.data(atFrame: 0) {
-        let peekedValue = iter.peekFrame()
+    if let iter, let firstBlockData = block?.data(atFrame: 1) {
+        let peekedValue = iter.peekNextFrame()
         #expect(peekedValue == firstBlockData)
     }
     
     let iter2 = SampleChannelIterator(atFrame: 44099, inChannel: testSample.channels[0])
     #expect(iter2 != nil)
     
-    if let iter2 {
+    if var iter2 {
         #expect(iter2.peekNextFrame() == 0)
+        let _ = iter2.nextFrameAndAdvance()
+        #expect(iter2.peekNextFrame() == 0)
+
     }
 }
 

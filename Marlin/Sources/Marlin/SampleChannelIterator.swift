@@ -67,7 +67,7 @@ public extension SampleChannelIterator {
     }
     
     func peekNextFrame() -> Float {
-        guard var currentBlock else {
+        guard let currentBlock else {
             return 0
         }
         
