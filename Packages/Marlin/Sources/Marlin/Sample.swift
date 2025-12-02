@@ -22,6 +22,7 @@ final public class Sample {
     
     public var bitDepth: Int = 0
     public var sampleRate: Double = 0
+    public var isLoaded: Bool { !channels.isEmpty }
     
     let sampleBlockFactory: any SampleBlockFactory
     public convenience init() {
