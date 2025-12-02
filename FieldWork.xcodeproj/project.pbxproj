@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AE3EF3502EDE433700184D0E /* MarlinKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE3EF34F2EDE433700184D0E /* MarlinKit */; };
 		AEB425982ECD222E00A918C1 /* Marlin in Frameworks */ = {isa = PBXBuildFile; productRef = AEB425972ECD222E00A918C1 /* Marlin */; };
 /* End PBXBuildFile section */
 
@@ -28,7 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AE46E6EA2ED50B5C0032B4A2 /* Marlin.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Marlin.xctestplan; path = Marlin/Tests/MarlinTests/Marlin.xctestplan; sourceTree = "<group>"; };
+		AE3EF34D2EDBA1A900184D0E /* MarlinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MarlinKit; sourceTree = "<group>"; };
 		AEB4256B2ECA869D00A918C1 /* FieldWork.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FieldWork.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEB425782ECA869F00A918C1 /* FieldWorkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FieldWorkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEB425822ECA869F00A918C1 /* FieldWorkUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FieldWorkUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -58,6 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE3EF3502EDE433700184D0E /* MarlinKit in Frameworks */,
 				AEB425982ECD222E00A918C1 /* Marlin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -79,11 +81,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AE3EF34E2EDBA1B800184D0E /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				AE3EF34D2EDBA1A900184D0E /* MarlinKit */,
+				AEB425952ECA881600A918C1 /* Marlin */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		AEB425622ECA869D00A918C1 = {
 			isa = PBXGroup;
 			children = (
-				AE46E6EA2ED50B5C0032B4A2 /* Marlin.xctestplan */,
-				AEB425952ECA881600A918C1 /* Marlin */,
+				AE3EF34E2EDBA1B800184D0E /* Packages */,
 				AEB4256D2ECA869D00A918C1 /* FieldWork */,
 				AEB4257B2ECA869F00A918C1 /* FieldWorkTests */,
 				AEB425852ECA869F00A918C1 /* FieldWorkUITests */,
@@ -130,6 +140,7 @@
 			name = FieldWork;
 			packageProductDependencies = (
 				AEB425972ECD222E00A918C1 /* Marlin */,
+				AE3EF34F2EDE433700184D0E /* MarlinKit */,
 			);
 			productName = FieldWork;
 			productReference = AEB4256B2ECA869D00A918C1 /* FieldWork.app */;
@@ -663,6 +674,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AE3EF34F2EDE433700184D0E /* MarlinKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MarlinKit;
+		};
 		AEB425972ECD222E00A918C1 /* Marlin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Marlin;
