@@ -80,12 +80,12 @@ extension FileSampleBlock: SampleBlock.Methods {
         
         guard cachePoint < numberOfCachePoints else {
             Logger.fileSampleBlock.error("Out of bounds request: \(cachePoint) is bigger than \(numberOfCachePoints)")
-            return .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
+            return .zero
         }
         
         guard let data = cachePointRegion.mappedData else {
             Logger.fileSampleBlock.error("Cachepoint region is not mapped")
-            return .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
+            return .zero
         }
         
         return data[Int(cachePoint + UInt64(cacheRegionOffset))]

@@ -10,8 +10,9 @@ enum SampleChannelError: Error {
 }
 
 public class SampleChannel {
-    public struct CachePoint: Equatable {
+    public struct CachePoint: Sendable, Equatable {
         static let samplesPerCachePoint: Int = 256
+        public static let zero: CachePoint = .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
         
         public let minValue: Float
         public let maxValue: Float
