@@ -1,4 +1,5 @@
 import Marlin
+import MarlinKit
 import SwiftUI
 
 struct ContentView: View {
@@ -25,7 +26,11 @@ struct ContentView: View {
                              value: operation.progress, total: 1.0)
             }
             
-            if sample.numberOfFrames > 0 {
+            if sample.isLoaded {
+                ScrollView(.horizontal) {
+                    SampleView(sample: sample)
+                }
+                
                 Text("Filename: \(Self.sampleUrl.lastPathComponent)")
                 Text("Channels: \(sample.channels.count == 1 ? "Mono" : "Stereo")")
                 Text("Number of Frames: \(sample.numberOfFrames)")
