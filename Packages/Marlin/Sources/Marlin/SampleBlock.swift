@@ -20,6 +20,10 @@ class SampleBlock {
 }
 
 extension SampleBlock {
+    func contains(_ frame: UInt64) -> Bool {
+        frame >= startFrame && frame <= lastFrame
+    }
+    
     /// Get the data in the block at the frame position
     /// - Parameter frame: the frame position relative to the start of the block
     /// - Returns: the float data at that frame

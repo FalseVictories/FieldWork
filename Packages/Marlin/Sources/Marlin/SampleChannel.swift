@@ -56,11 +56,11 @@ extension SampleChannel {
         
         // Shortcut the binary search as these blocks are probably more popular
         // and binary search would fail to find them quickly
-        if frame <= firstBlock.lastFrame {
+        if firstBlock.contains(frame) {
             return firstBlock
         }
         
-        if frame >= lastBlock.startFrame && frame <= lastBlock.startFrame {
+        if lastBlock.contains(frame) {
             return lastBlock
         }
         
@@ -71,7 +71,7 @@ extension SampleChannel {
             let middle = right - left / 2
             let block = sortedBlocks[middle]
             
-            if block.startFrame <= frame && block.lastFrame >= frame {
+            if block.contains(frame) {
                 return block
             } else if block.startFrame > frame {
                 right = middle - 1
