@@ -19,11 +19,11 @@ import Testing
     if var iter2 {
         #expect(iter2.hasMoreData)
         
-        _ = iter2.nextFrameAndAdvance()
+        _ = iter2.frameAndAdvance()
         
         #expect(!iter2.hasMoreData)
         
-        #expect(iter2.nextFrameAndAdvance() == nil)
+        #expect(iter2.frameAndAdvance() == nil)
     }
     
     let iter3 = SampleChannelIterator(atFrame: 44100, inChannel: testSample.channels[0])
@@ -52,7 +52,7 @@ import Testing
     
     if var iter, let block = testSample.channels[0].firstBlock {
         for frame in 0..<block.numberOfFrames {
-            let value = iter.nextFrameAndAdvance()
+            let value = iter.frameAndAdvance()
             #expect(value != nil)
             #expect(value! == block.data(atFrame: frame))
         }
@@ -83,7 +83,7 @@ import Testing
     
     if var iter {
         var count = 0
-        while let _ = iter.nextFrameAndAdvance() {
+        while let _ = iter.frameAndAdvance() {
             count += 1
         }
         #expect(count == testSample.numberOfFrames)
@@ -109,7 +109,7 @@ import Testing
     #expect(iter2 != nil)
     
     if var iter2 {
-        _ = iter2.nextFrameAndAdvance()
+        _ = iter2.frameAndAdvance()
         #expect(iter2.peekFrame() == 0)
     }
 }
@@ -134,9 +134,8 @@ import Testing
     
     if var iter2 {
         #expect(iter2.peekNextFrame() == 0)
-        let _ = iter2.nextFrameAndAdvance()
+        let _ = iter2.frameAndAdvance()
         #expect(iter2.peekNextFrame() == 0)
-
     }
 }
 
@@ -153,5 +152,45 @@ import Testing
     if let iter, let block {
         let result = iter.peekNextFrame()
         #expect(result == block.data(atFrame: 0))
+    }
+}
+
+@MainActor
+@Test func testCachePointAndAdvance() throws {
+    let testSample = try makeTestSample()
+    
+    let block = testSample.channels[0].firstBlock
+    #expect(block != nil)
+    
+    let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if var iter, let block {
+        var maxValue: Float = 0
+        var minValue: Float = 0
+        var totalAbove: Float = 0
+        var totalBelow: Float = 0
+        var numberFramesAbove: Int = 0
+        var numberFramesBelow: Int = 0
+        
+        for i in 0..<4 {
+            let value = block.data(atFrame: UInt64(i))
+            print("result val")
+            maxValue = max(value, maxValue)
+            minValue = min(value, minValue)
+            if value > 0 {
+                totalAbove += value
+                numberFramesAbove += 1
+            } else if value < 0 {
+                totalBelow += value
+                numberFramesBelow += 1
+            }
+        }
+        
+        let result = SampleChannel.CachePoint(minValue: minValue,
+                                              maxValue: maxValue,
+                                              avgMinValue: numberFramesBelow == 0 ? 0 : totalBelow / Float(numberFramesBelow),
+                                              avgMaxValue: numberFramesAbove == 0 ? 0 : totalAbove / Float(numberFramesAbove))
+        #expect(iter.pixelCachePointAndAdvance(forFramesPerPixel: 4) == result)
     }
 }
