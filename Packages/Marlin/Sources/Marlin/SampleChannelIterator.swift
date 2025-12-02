@@ -10,7 +10,7 @@ public struct SampleChannelIterator {
     var frameInBlock: UInt64 = 0
     var cachePointInBlock: UInt64 = 0
     
-    init?(atFrame frame: UInt64, inChannel channel: SampleChannel) {
+    public init?(atFrame frame: UInt64, inChannel channel: SampleChannel) {
         guard let currentBlock = channel.sampleBlockForFrame(frame) else {
             Logger.channelIter.error("no block for \(frame)")
             return nil
@@ -27,7 +27,7 @@ public extension SampleChannelIterator {
         currentBlock != nil
     }
     
-    mutating func nextFrameAndAdvance() -> Float? {
+    mutating func frameAndAdvance() -> Float? {
         guard let currentBlock else {
             return nil
         }
@@ -77,5 +77,86 @@ public extension SampleChannelIterator {
         }
         
         return currentBlock.nextBlock?.data(atFrame: 0) ?? 0
+    }
+    
+    mutating func pixelCachePointAndAdvance(forFramesPerPixel fpp: UInt) -> SampleChannel.CachePoint? {
+        guard let currentBlock else {
+            return nil
+        }
+        
+        if fpp < SampleChannel.CachePoint.samplesPerCachePoint {
+            return generateCachePoint(fromFramesPerPixel: fpp)
+        } else {
+            let cachePointsPerPixel = fpp / UInt(SampleChannel.CachePoint.samplesPerCachePoint)
+            return generateCachePoint(fromCachePointsPerPixel: cachePointsPerPixel)
+        }
+    }
+}
+
+private extension SampleChannelIterator {
+    private mutating func generateCachePoint(fromFramesPerPixel fpp: UInt) -> SampleChannel.CachePoint {
+        var framesReadAbove: UInt = 0
+        var framesReadBelow: UInt = 0
+        var totalAbove: Float = 0
+        var totalBelow: Float = 0
+        var maxValue: Float = 0
+        var minValue: Float = 0
+        
+        var i: UInt = 0
+        while i < fpp {
+            guard let value = frameAndAdvance() else {
+                break
+            }
+            
+            maxValue = max(value, maxValue)
+            minValue = min(value, minValue)
+            
+            if value > 0 {
+                totalAbove += value
+                framesReadAbove += 1
+            } else if value < 0 {
+                totalBelow += value
+                framesReadBelow += 1
+            }
+            
+            i += 1
+        }
+        
+        var avgAbove: Float = 0
+        var avgBelow: Float = 0
+        
+        if i != 0 {
+            avgAbove = framesReadAbove == 0 ? 0 : totalAbove / Float(framesReadAbove)
+            avgBelow = framesReadBelow == 0 ? 0 : totalBelow / Float(framesReadBelow)
+        }
+
+        return .init(minValue: minValue, maxValue: maxValue,
+                     avgMinValue: avgBelow, avgMaxValue: avgAbove)
+    }
+    
+    private mutating func generateCachePoint(fromCachePointsPerPixel cppp: UInt) -> SampleChannel.CachePoint {
+        var maxValue: Float = 0
+        var minValue: Float = 0
+        var totalAbove: Float = 0
+        var totalBelow: Float = 0
+        
+        var i: UInt = 0
+        while i < cppp {
+            guard let cp = nextCachePointAndAdvance() else {
+                break
+            }
+            
+            maxValue = max(cp.maxValue, maxValue)
+            minValue = min(cp.minValue, minValue)
+            totalAbove += cp.avgMaxValue
+            totalBelow += cp.avgMinValue
+            
+            i += 1
+        }
+
+        return i == 0 ? .zero : .init(minValue: minValue,
+                                      maxValue: maxValue,
+                                      avgMinValue: totalBelow / Float(i),
+                                      avgMaxValue: totalAbove / Float(i))
     }
 }
