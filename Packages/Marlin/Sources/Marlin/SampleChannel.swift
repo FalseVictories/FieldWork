@@ -27,6 +27,8 @@ public class SampleChannel {
     var blockCount: UInt32 = 0
     var numberOfFrames: UInt64 = 0
     
+    private var sortedBlocks: [SampleBlock] = []
+    
     // Factory used when creating a block from data
     let blockFactory: any SampleBlockFactory
     
@@ -47,16 +49,35 @@ extension SampleChannel {
             Logger.sampleChannel.error("Requested sample block for frame \(frame), but only \(self.numberOfFrames) available")
             return nil
         }
-        
-        var currentBlock = firstBlock
 
-        while currentBlock != nil {
-            let block = currentBlock!
-            if block.startFrame <= frame  && block.lastFrame >= frame {
-                return currentBlock
-            }
+        guard let firstBlock, let lastBlock else {
+            return nil
+        }
+        
+        // Shortcut the binary search as these blocks are probably more popular
+        // and binary search would fail to find them quickly
+        if frame <= firstBlock.lastFrame {
+            return firstBlock
+        }
+        
+        if frame >= lastBlock.startFrame && frame <= lastBlock.startFrame {
+            return lastBlock
+        }
+        
+        // Binary search over sorted blocks
+        var left = 0, right = sortedBlocks.count - 1
+        
+        while right >= left {
+            let middle = right - left / 2
+            let block = sortedBlocks[middle]
             
-            currentBlock = block.nextBlock
+            if block.startFrame <= frame && block.lastFrame >= frame {
+                return block
+            } else if block.startFrame > frame {
+                right = middle - 1
+            } else if block.lastFrame < frame {
+                left = middle + 1
+            }
         }
         
         Logger.sampleChannel.error("Requested sample block for frame \(frame) but couldn't find it")
@@ -66,6 +87,8 @@ extension SampleChannel {
 
 private extension SampleChannel {
     private func appendBlock(_ block: SampleBlock) throws {
+        sortedBlocks.append(block)
+
         // If this is the very first block, start the list
         if firstBlock == nil {
             firstBlock = block
