@@ -1,7 +1,6 @@
 import AppKit
 import Marlin
 
-@MainActor
 public class AppKitSampleView: NSView {
     var sample: Sample? {
         didSet {
@@ -25,6 +24,10 @@ public class AppKitSampleView: NSView {
                 needsDisplay = true
             }
         }
+    }
+    
+    init() {
+        super.init(frame: .zero)
     }
     
     init(withSample sample: Sample) {
@@ -60,9 +63,7 @@ extension AppKitSampleView {
         if !sample.isLoaded {
             return
         }
-        
-        print("Dirty rect: \(dirtyRect)")
-        print("Drawing sample")
+
         let channelHeight = Int(frame.height) / sample.channels.count
         let fpp = framesPerPixel
         for (index, channel) in sample.channels.enumerated() {
@@ -76,7 +77,6 @@ extension AppKitSampleView {
             drawRect.origin.y = rect.origin.y
             drawRect.size.height = CGFloat(channelHeight)
             
-            print("  Drawing channel \(rect) -> \(drawRect)")
             drawChannel(channel,
                         inRect: drawRect,
                         framesPerPixel: fpp,

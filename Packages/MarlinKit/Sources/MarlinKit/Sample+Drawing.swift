@@ -11,7 +11,6 @@ extension Sample {
                 rmsPath: NSBezierPath) {
         let firstFrame = UInt64(rect.origin.x) * UInt64(fpp)
         
-        print(" Sample draw: \(fpp) in \(rect)")
         guard var iter = SampleChannelIterator(atFrame: firstFrame, inChannel: channel) else {
             return
         }
@@ -20,8 +19,6 @@ extension Sample {
         // Consider drawing from 0.5 with width 3, we need to draw the 0, 1, 2, and 3 pixels
         // which is 4 frames
         let numberOfPixels = floor(rect.size.width) + 1
-        
-        print(" drawing number of frames: \(numberOfPixels)")
         
         if (fpp == 1) {
             for x in 0..<Int(numberOfPixels) {
@@ -44,10 +41,6 @@ extension Sample {
                 let rmsMax = (CGFloat(cachePoint.avgMaxValue / 2) * rect.size.height) + rect.origin.y
                 let rmsMin = (CGFloat(cachePoint.avgMinValue / 2) * rect.size.height) + rect.origin.y
                 
-//                print("   x: \(CGFloat(x) + rect.origin.x)")
-//                print("       min: \(minY) -> \(maxY)")
-//                print("       rms: \(rmsMin) -> \(rmsMax)")
-                
                 minMaxPath.move(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: maxY))
                 minMaxPath.line(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: minY))
                 
@@ -55,6 +48,5 @@ extension Sample {
                 rmsPath.line(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: rmsMin))
             }
         }
-        print(" Drawing done")
     }
 }

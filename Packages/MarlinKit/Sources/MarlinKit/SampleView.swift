@@ -9,9 +9,11 @@ public struct SampleView: NSViewRepresentable {
     }
     
     public func makeNSView(context: Context) -> AppKitSampleView {
-        AppKitSampleView(withSample: sample)
+        AppKitSampleView()
     }
     
-    public func updateNSView(_ nsView: AppKitSampleView, context: Context) {
+    public func updateNSView(_ view: AppKitSampleView,
+                             context: Context) {
+        view.sample = sample
     }
 }
