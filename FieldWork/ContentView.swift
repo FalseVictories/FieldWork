@@ -3,7 +3,7 @@ import MarlinKit
 import SwiftUI
 
 struct ContentView: View {
-    static let sampleUrl = URL(filePath: "/Users/iain/Music/hidden.flac")
+    static let sampleUrl = URL(filePath: "/Users/iain/Music/betteroffalone.mp3")
     @State var sample: Sample
     @State var text: String = ""
     
@@ -14,10 +14,12 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            Button("Load Sample") {
-                Task {
-                    try await sample.loadSample(from: Self.sampleUrl,
-                                                withAudioLoader: AVAudioLoader())
+            if !sample.isLoaded && sample.currentOperation == nil {
+                Button("Load Sample") {
+                    Task {
+                        try await sample.loadSample(from: Self.sampleUrl,
+                                                    withAudioLoader: AVAudioLoader())
+                    }
                 }
             }
             

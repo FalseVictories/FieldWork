@@ -10,13 +10,15 @@ public class AppKitSampleView: NSView {
             
             if sample.isLoaded {
                 invalidateIntrinsicContentSize()
+                setupLayers()
+
                 needsDisplay = true
             } else {
                 // FIXME - observe isLoaded changing
             }
         }
     }
-    
+
     var framesPerPixel: UInt = 256 {
         didSet {
             if framesPerPixel != oldValue {
@@ -28,11 +30,18 @@ public class AppKitSampleView: NSView {
     
     init() {
         super.init(frame: .zero)
+        self.wantsLayer = true
     }
     
     init(withSample sample: Sample) {
         self.sample = sample
         super.init(frame: .zero)
+        self.wantsLayer = true
+    }
+    
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     var width: CGFloat {
@@ -46,74 +55,50 @@ public class AppKitSampleView: NSView {
     public override var intrinsicContentSize: NSSize {
         .init(width: self.width, height: NSView.noIntrinsicMetric)
     }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-extension AppKitSampleView {
-    public override func draw(_ dirtyRect: NSRect) {
-        guard let sample = sample else {
-            drawBrokenSample(dirtyRect)
-            return
-        }
-        
-        if !sample.isLoaded {
-            return
-        }
-
-        let channelHeight = Int(frame.height) / sample.channels.count
-        let fpp = framesPerPixel
-        for (index, channel) in sample.channels.enumerated() {
-            let yOffset = CGFloat(channelHeight) / 2
-            let rect = CGRect(x: 0,
-                              y: CGFloat(channelHeight) * CGFloat(index) + yOffset,
-                              width: width,
-                              height: CGFloat(channelHeight))
-            
-            var drawRect = NSIntersectionRect(rect, dirtyRect)
-            drawRect.origin.y = rect.origin.y
-            drawRect.size.height = CGFloat(channelHeight)
-            
-            drawChannel(channel,
-                        inRect: drawRect,
-                        framesPerPixel: fpp,
-                        strokeColor: index == 0 ? NSColor.systemRed : NSColor.systemBlue)
-        }
-    }
     
-    private func drawBrokenSample(_ dirtyRect: NSRect) {
-        NSColor.systemRed.setFill()
-        NSBezierPath.fill(dirtyRect)
-    }
-    
-    private func drawChannel(_ channel: SampleChannel,
-                             inRect rect: NSRect,
-                             framesPerPixel fpp: UInt,
-                             strokeColor: NSColor) {
-        guard let sample = sample else {
+    public override func layout() {
+        super.layout()
+        
+        guard let sample, !sample.channels.isEmpty else {
             return
         }
         
-        let minMaxPath = NSBezierPath()
-        let rmsPath = NSBezierPath()
-
-        sample.draw(channel,
-                    inRect: rect,
-                    framesPerPixel: fpp,
-                    minMaxPath:minMaxPath, rmsPath:rmsPath)
+        let channelCount = sample.channels.count
         
-        strokeColor.withAlphaComponent(0.5).set()
-        minMaxPath.stroke()
-        
-        strokeColor.set()
-        rmsPath.stroke()
+        var channelNumber = 0
+        if let sublayers = layer?.sublayers {
+            let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
+            
+            for sublayer in sublayers {
+                // Flip the channel positions so channel 0 is at the top and channel 1 below
+                let channelY = Int(frame.height) - (channelHeight * (channelNumber + 1) + (5 * channelNumber))
+                
+                sublayer.frame = CGRect(x: 0, y: channelY,
+                                         width: Int(width), height: channelHeight)
+                channelNumber += 1
+            }
+        }
     }
 }
 
 private extension AppKitSampleView {
+    static var channelColors: [NSColor] = [.systemRed, .systemBlue, .systemGreen]
+    func setupLayers() {
+        guard let sample else {
+            return
+        }
+        
+        var channelNumber = 0
+        for channel in sample.channels {
+            let channelLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+            
+            channelLayer.backgroundColor = NSColor.systemGray.withAlphaComponent(0.3).cgColor
+            channelLayer.cornerRadius = 6
+            layer?.addSublayer(channelLayer)
+            channelNumber += 1
+        }
+    }
+
     func convertPointToFrame(_ point: NSPoint) -> UInt64 {
         let scaledPoint = convertToBacking(point)
         

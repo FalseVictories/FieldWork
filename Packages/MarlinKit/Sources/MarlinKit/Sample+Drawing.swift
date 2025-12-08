@@ -3,15 +3,15 @@ import AppKit
 
 import Marlin
 
-extension Sample {
-    func draw(_ channel: SampleChannel,
-            inRect rect: CGRect,
-     framesPerPixel fpp: UInt,
-             minMaxPath: NSBezierPath,
-                rmsPath: NSBezierPath) {
+extension SampleChannel {
+    nonisolated
+    func draw(inRect rect: CGRect,
+              framesPerPixel fpp: UInt,
+              minMaxPath: NSBezierPath,
+              rmsPath: NSBezierPath) {
         let firstFrame = UInt64(rect.origin.x) * UInt64(fpp)
         
-        guard var iter = SampleChannelIterator(atFrame: firstFrame, inChannel: channel) else {
+        guard var iter = SampleChannelIterator(atFrame: firstFrame, inChannel: self) else {
             return
         }
         
