@@ -80,7 +80,7 @@ public extension SampleChannelIterator {
     }
     
     mutating func pixelCachePointAndAdvance(forFramesPerPixel fpp: UInt) -> SampleChannel.CachePoint? {
-        guard let currentBlock else {
+        guard currentBlock != nil else {
             return nil
         }
         
