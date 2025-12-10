@@ -1,5 +1,11 @@
 import Foundation
+#if os(macOS)
 import AppKit
+typealias PlatformBezierPath = NSBezierPath
+#elseif os(iOS)
+import UIKit
+typealias PlatformBezierPath = UIBezierPath
+#endif
 
 import Marlin
 
@@ -7,8 +13,8 @@ extension SampleChannel {
     nonisolated
     func draw(inRect rect: CGRect,
               framesPerPixel fpp: UInt,
-              minMaxPath: NSBezierPath,
-              rmsPath: NSBezierPath) {
+              minMaxPath: PlatformBezierPath,
+              rmsPath: PlatformBezierPath) {
         let firstFrame = UInt64(rect.origin.x) * UInt64(fpp)
         
         guard var iter = SampleChannelIterator(atFrame: firstFrame, inChannel: self) else {
@@ -25,7 +31,7 @@ extension SampleChannel {
                 let value: Float = iter.frameAndAdvance() ?? 0
                 
                 let y = (CGFloat(value / 2) * rect.size.height) + rect.origin.y
-                let point = NSPoint(x: CGFloat(x) + rect.origin.x, y: y)
+                let point = CGPoint(x: CGFloat(x) + rect.origin.x, y: y)
                 if x == 0 {
                     minMaxPath.move(to: point)
                 } else {
@@ -41,12 +47,21 @@ extension SampleChannel {
                 let rmsMax = (CGFloat(cachePoint.avgMaxValue / 2) * rect.size.height) + rect.origin.y
                 let rmsMin = (CGFloat(cachePoint.avgMinValue / 2) * rect.size.height) + rect.origin.y
                 
-                minMaxPath.move(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: maxY))
-                minMaxPath.line(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: minY))
+                minMaxPath.move(to: CGPoint(x: CGFloat(x) + rect.origin.x, y: maxY))
+                minMaxPath.line(to: CGPoint(x: CGFloat(x) + rect.origin.x, y: minY))
                 
-                rmsPath.move(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: rmsMax))
-                rmsPath.line(to: NSPoint(x: CGFloat(x) + rect.origin.x, y: rmsMin))
+                rmsPath.move(to: CGPoint(x: CGFloat(x) + rect.origin.x, y: rmsMax))
+                rmsPath.line(to: CGPoint(x: CGFloat(x) + rect.origin.x, y: rmsMin))
             }
         }
     }
 }
+
+#if os(iOS)
+private extension UIBezierPath {
+    // Forward the NSBezierPath function to the UIBezierPath name
+    func line(to point: CGPoint) {
+        addLine(to: point)
+    }
+}
+#endif

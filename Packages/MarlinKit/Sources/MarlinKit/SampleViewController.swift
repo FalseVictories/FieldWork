@@ -1,10 +1,15 @@
+#if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
+
 import Marlin
 
-final class AppKitSampleViewController: NSViewController {
-    let sampleView: AppKitSampleView = .init()
+public final class SampleViewController: PlatformViewController {
+    let sampleView: PlatformSampleView = .init()
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         view.addSubview(sampleView)
         sampleView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -16,9 +21,9 @@ final class AppKitSampleViewController: NSViewController {
         ])
     }
     
-    override var representedObject: Any? {
+    var sample: Sample? {
         didSet {
-            sampleView.sample = representedObject as? Sample
+            sampleView.sample = sample
         }
     }
 }

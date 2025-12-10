@@ -1,10 +1,15 @@
+#if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
+
 import QuartzCore
 import Marlin
 
 class SampleChannelLayer: CATiledLayer {
     let channel: SampleChannel
-    var strokeColor: NSColor
+    var strokeColor: PlatformColor
     
     class override func fadeDuration() -> CFTimeInterval {
         .zero
@@ -17,7 +22,7 @@ class SampleChannelLayer: CATiledLayer {
     }
     
     init(channel: SampleChannel,
-         strokeColor: NSColor) {
+         strokeColor: PlatformColor) {
         self.channel = channel
         self.strokeColor = strokeColor
         
@@ -32,19 +37,14 @@ class SampleChannelLayer: CATiledLayer {
     override func draw(in ctx: CGContext) {
         let clipRect = ctx.boundingBoxOfClipPath
         
-        let minMaxPath = NSBezierPath()
-        let rmsPath = NSBezierPath()
+        let minMaxPath = PlatformBezierPath()
+        let rmsPath = PlatformBezierPath()
 
         // Add an offset to centre the waveform
-//        let offsetBounds = CGRect(x: bounds.minX,
-//                                  y: bounds.minY + bounds.height / 2,
-//                                  width: bounds.width,
-//                                  height: bounds.height)
-        
         let offsetBounds = CGRect(x: clipRect.minX,
-                                  y: clipRect.minY + clipRect.height / 2,
+                                  y: bounds.minY + (bounds.height / 2),
                                   width: clipRect.width,
-                                  height: clipRect.height)
+                                  height: bounds.height)
         
         channel.draw(inRect: offsetBounds,
                      framesPerPixel: framesPerPixel,

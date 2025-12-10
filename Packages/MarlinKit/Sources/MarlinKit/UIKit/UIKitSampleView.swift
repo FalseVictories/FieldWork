@@ -1,9 +1,9 @@
-#if os(macOS)
-import AppKit
+#if os(iOS)
+import UIKit
 
 import Marlin
 
-public class AppKitSampleView: NSView {
+public class UIKitSampleView: UIView {
     var sample: Sample? {
         didSet {
             guard let sample else {
@@ -14,7 +14,7 @@ public class AppKitSampleView: NSView {
                 invalidateIntrinsicContentSize()
                 setupLayers()
 
-                needsDisplay = true
+                setNeedsDisplay()
             } else {
                 // FIXME - observe isLoaded changing
             }
@@ -25,20 +25,18 @@ public class AppKitSampleView: NSView {
         didSet {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
-                needsDisplay = true
+                setNeedsDisplay()
             }
         }
     }
     
     init() {
         super.init(frame: .zero)
-        self.wantsLayer = true
     }
     
     init(withSample sample: Sample) {
         self.sample = sample
         super.init(frame: .zero)
-        self.wantsLayer = true
     }
     
     @available(*, unavailable)
@@ -48,19 +46,17 @@ public class AppKitSampleView: NSView {
     
     var width: CGFloat {
         guard let sample = sample else {
-            return NSView.noIntrinsicMetric
+            return UIView.noIntrinsicMetric
         }
         
         return ceil(CGFloat(sample.numberOfFrames) / CGFloat(framesPerPixel))
     }
     
-    public override var intrinsicContentSize: NSSize {
-        .init(width: self.width, height: NSView.noIntrinsicMetric)
+    public override var intrinsicContentSize: CGSize {
+        return .init(width: width, height: UIView.noIntrinsicMetric)
     }
     
-    public override func layout() {
-        super.layout()
-        
+    public override func layoutSublayers(of layer: CALayer) {
         guard let sample, !sample.channels.isEmpty else {
             return
         }
@@ -68,22 +64,23 @@ public class AppKitSampleView: NSView {
         let channelCount = sample.channels.count
         
         var channelNumber = 0
-        if let sublayers = layer?.sublayers {
+        if let sublayers = layer.sublayers {
             let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
             
             for sublayer in sublayers {
                 // Flip the channel positions so channel 0 is at the top and channel 1 below
-                let channelY = Int(frame.height) - (channelHeight * (channelNumber + 1) + (5 * channelNumber))
-                
+                let channelY = (channelNumber * (channelHeight + 5))
                 sublayer.frame = CGRect(x: 0, y: channelY,
                                          width: Int(width), height: channelHeight)
                 channelNumber += 1
+                
+                sublayer.setNeedsDisplay()
             }
         }
     }
 }
 
-private extension AppKitSampleView {
+private extension UIKitSampleView {
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupLayers() {
         guard let sample else {
@@ -96,11 +93,12 @@ private extension AppKitSampleView {
             
             channelLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
             channelLayer.cornerRadius = 6
-            layer?.addSublayer(channelLayer)
+            layer.addSublayer(channelLayer)
             channelNumber += 1
         }
     }
 
+    /*
     func convertPointToFrame(_ point: NSPoint) -> UInt64 {
         let scaledPoint = convertToBacking(point)
         
@@ -111,5 +109,6 @@ private extension AppKitSampleView {
         let scaledPoint = CGPoint(x: Double(frame / UInt64(framesPerPixel)), y: 0.0)
         return convertFromBacking(scaledPoint)
     }
+     */
 }
 #endif
