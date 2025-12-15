@@ -109,8 +109,8 @@ extension FileSampleBlock {
         
         while samplesRemaining > 0 {
             var minValue: Float = 0.0, maxValue: Float = 0.0
-            var sumBelowZero: Float = 0.0, sumAboveZero: Float = 0.0
-            var aboveCount = 0, belowCount = 0
+            var sumBelowZero: Double = 0.0, sumAboveZero: Double = 0.0
+            var aboveCount = 0, belowCount = 0, zeroCount = 0
             
             var i = 0
             while i < SampleChannel.CachePoint.samplesPerCachePoint &&
@@ -120,11 +120,13 @@ extension FileSampleBlock {
                 minValue = min(minValue, value)
                 maxValue = max(maxValue, value)
                 if value < 0.0 {
-                    sumBelowZero += value
+                    sumBelowZero += Double(value)
                     belowCount += 1
-                } else {
-                    sumAboveZero += value
+                } else if value > 0.0 {
+                    sumAboveZero += Double(value)
                     aboveCount += 1
+                } else {
+                    zeroCount += 1
                 }
                 
                 i += 1
@@ -132,10 +134,10 @@ extension FileSampleBlock {
                 samplesRemaining -= 1
             }
             
-            let cp = SampleChannel.CachePoint(minValue: minValue,
-                                              maxValue: maxValue,
-                                              avgMinValue: belowCount == 0 ? 0.0 : sumBelowZero / Float(belowCount),
-                                              avgMaxValue: aboveCount == 0 ? 0.0 : sumAboveZero / Float(aboveCount))
+            let cp = SampleChannel.CachePoint(minValue: Double(minValue),
+                                              maxValue: Double(maxValue),
+                                              avgMinValue: belowCount == 0 ? 0.0 : sumBelowZero / Double(belowCount),
+                                              avgMaxValue: aboveCount == 0 ? 0.0 : sumAboveZero / Double(aboveCount))
             cachePointsBuffer[positionInCachePointBuffer] = cp
             
             positionInCachePointBuffer += 1

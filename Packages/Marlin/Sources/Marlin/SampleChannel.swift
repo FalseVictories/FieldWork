@@ -14,10 +14,10 @@ public class SampleChannel {
         static let samplesPerCachePoint: Int = 256
         public static let zero: CachePoint = .init(minValue: 0, maxValue: 0, avgMinValue: 0, avgMaxValue: 0)
         
-        public let minValue: Float
-        public let maxValue: Float
-        public let avgMinValue: Float
-        public let avgMaxValue: Float
+        public let minValue: Double
+        public let maxValue: Double
+        public let avgMinValue: Double
+        public let avgMaxValue: Double
     }
     
     public var channelName: String = ""

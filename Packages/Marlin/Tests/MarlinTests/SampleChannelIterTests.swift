@@ -35,11 +35,11 @@ import Testing
     if var iter4 {
         #expect(iter4.hasMoreData)
         
-        _ = iter4.nextCachePointAndAdvance()
+        _ = iter4.cachePointAndAdvance()
         
         #expect(!iter4.hasMoreData)
         
-        #expect(iter4.nextCachePointAndAdvance() == nil)
+        #expect(iter4.cachePointAndAdvance() == nil)
     }
 }
 
@@ -68,7 +68,7 @@ import Testing
     
     if var iter, let block = testSample.channels[0].firstBlock {
         for cachePoint in 0..<(block.numberOfFrames / UInt64(SampleChannel.CachePoint.samplesPerCachePoint)) {
-            let value = iter.nextCachePointAndAdvance()
+            let value = iter.cachePointAndAdvance()
             #expect(value != nil)
             #expect(value! == block.cachePoint(atFrame: cachePoint * UInt64(SampleChannel.CachePoint.samplesPerCachePoint)))
         }
@@ -168,29 +168,65 @@ import Testing
     if var iter, let block {
         var maxValue: Float = 0
         var minValue: Float = 0
-        var totalAbove: Float = 0
-        var totalBelow: Float = 0
+        var totalAbove: Double = 0
+        var totalBelow: Double = 0
         var numberFramesAbove: Int = 0
         var numberFramesBelow: Int = 0
         
         for i in 0..<4 {
             let value = block.data(atFrame: UInt64(i))
-            print("result val")
+
             maxValue = max(value, maxValue)
             minValue = min(value, minValue)
             if value > 0 {
-                totalAbove += value
+                totalAbove += Double(value)
                 numberFramesAbove += 1
             } else if value < 0 {
-                totalBelow += value
+                totalBelow += Double(value)
                 numberFramesBelow += 1
             }
         }
         
+        let result = SampleChannel.CachePoint(minValue: Double(minValue),
+                                              maxValue: Double(maxValue),
+                                              avgMinValue: numberFramesBelow == 0 ? 0 : totalBelow / Double(numberFramesBelow),
+                                              avgMaxValue: numberFramesAbove == 0 ? 0 : totalAbove / Double(numberFramesAbove))
+        #expect(iter.pixelCachePointAndAdvance(forFramesPerPixel: 4) == result)
+    }
+}
+
+@MainActor
+@Test func testLargeCachePointAndAdvance() throws {
+    let testSample = try makeTestSample()
+    
+    let block = testSample.channels[0].firstBlock
+    #expect(block != nil)
+    
+    let iter = SampleChannelIterator(atFrame: 0, inChannel: testSample.channels[0])
+    #expect(iter != nil)
+    
+    if var iter, let block {
+        let cachePoints = cachePointsFromBlock(block)
+        var minValue: Double = 0
+        var maxValue: Double = 0
+        var totalAvgBelow: Double = 0
+        var totalAvgAbove: Double = 0
+        
+        for i in 0..<4 {
+            let cp = cachePoints[i]
+            minValue = min(cp.minValue, minValue)
+            maxValue = max(cp.maxValue, maxValue)
+            totalAvgAbove += cp.avgMaxValue
+            totalAvgBelow += cp.avgMinValue
+        }
+        
         let result = SampleChannel.CachePoint(minValue: minValue,
                                               maxValue: maxValue,
-                                              avgMinValue: numberFramesBelow == 0 ? 0 : totalBelow / Float(numberFramesBelow),
-                                              avgMaxValue: numberFramesAbove == 0 ? 0 : totalAbove / Float(numberFramesAbove))
-        #expect(iter.pixelCachePointAndAdvance(forFramesPerPixel: 4) == result)
+                                              avgMinValue: totalAvgBelow / Double(4),
+                                              avgMaxValue: totalAvgAbove / Double(4))
+            
+        let iterResult = iter.pixelCachePointAndAdvance(forFramesPerPixel: 1024)
+        #expect(iterResult != nil)
+        #expect(iterResult == result)
     }
 }

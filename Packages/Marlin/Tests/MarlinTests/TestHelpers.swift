@@ -6,14 +6,16 @@ func makeTestSample(numberOfBlocks: Int = 1) throws -> Sample {
     let sample = Sample()
     let channel = SampleChannel(withSampleBlockFactory: DefaultSampleBlockFactory())
     
+    let data = UnsafeMutableBufferPointer<Float>.allocate(capacity: 44100)
     for _ in 0..<numberOfBlocks {
-        let data = UnsafeMutableBufferPointer<Float>.allocate(capacity: 44100)
         for i in 0..<44100 {
             data[i] = sin(Float(i) * Float.pi / 180)
         }
         
         try channel.appendData(UnsafeBufferPointer(data))
     }
+    data.deallocate()
+    
     sample.channels.append(channel)
     return sample
 }
@@ -26,7 +28,7 @@ func cachePointsFromBlock(_ block: SampleBlock) -> [SampleChannel.CachePoint] {
     var samplesRemaining = block.numberOfFrames
     while samplesRemaining > 0 {
         var minValue: Float = 0.0, maxValue: Float = 0.0
-        var sumBelowZero: Float = 0.0, sumAboveZero: Float = 0.0
+        var sumBelowZero: Double = 0.0, sumAboveZero: Double = 0.0
         var aboveCount = 0, belowCount = 0
         
         var i = 0
@@ -37,10 +39,10 @@ func cachePointsFromBlock(_ block: SampleBlock) -> [SampleChannel.CachePoint] {
             minValue = min(minValue, value)
             maxValue = max(maxValue, value)
             if value < 0.0 {
-                sumBelowZero += value
+                sumBelowZero += Double(value)
                 belowCount += 1
-            } else {
-                sumAboveZero += value
+            } else if value > 0.0 {
+                sumAboveZero += Double(value)
                 aboveCount += 1
             }
             
@@ -49,10 +51,10 @@ func cachePointsFromBlock(_ block: SampleBlock) -> [SampleChannel.CachePoint] {
             samplesRemaining -= 1
         }
         
-        let cp = SampleChannel.CachePoint(minValue: minValue,
-                                          maxValue: maxValue,
-                                          avgMinValue: belowCount == 0 ? 0.0 : sumBelowZero / Float(belowCount),
-                                          avgMaxValue: aboveCount == 0 ? 0.0 : sumAboveZero / Float(aboveCount))
+        let cp = SampleChannel.CachePoint(minValue: Double(minValue),
+                                          maxValue: Double(maxValue),
+                                          avgMinValue: belowCount == 0 ? 0.0 : sumBelowZero / Double(belowCount),
+                                          avgMaxValue: aboveCount == 0 ? 0.0 : sumAboveZero / Double(aboveCount))
         cachePoints.append(cp)
     }
     

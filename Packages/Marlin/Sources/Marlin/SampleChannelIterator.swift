@@ -44,7 +44,7 @@ public extension SampleChannelIterator {
         return value
     }
     
-    mutating func nextCachePointAndAdvance() -> SampleChannel.CachePoint? {
+    mutating func cachePointAndAdvance() -> SampleChannel.CachePoint? {
         guard let currentBlock else {
             return nil
         }
@@ -97,8 +97,8 @@ private extension SampleChannelIterator {
     private mutating func generateCachePoint(fromFramesPerPixel fpp: UInt) -> SampleChannel.CachePoint {
         var framesReadAbove: UInt = 0
         var framesReadBelow: UInt = 0
-        var totalAbove: Float = 0
-        var totalBelow: Float = 0
+        var totalAbove: Double = 0
+        var totalBelow: Double = 0
         var maxValue: Float = 0
         var minValue: Float = 0
         
@@ -112,37 +112,37 @@ private extension SampleChannelIterator {
             minValue = min(value, minValue)
             
             if value > 0 {
-                totalAbove += value
+                totalAbove += Double(value)
                 framesReadAbove += 1
             } else if value < 0 {
-                totalBelow += value
+                totalBelow += Double(value)
                 framesReadBelow += 1
             }
             
             i += 1
         }
         
-        var avgAbove: Float = 0
-        var avgBelow: Float = 0
+        var avgAbove: Double = 0
+        var avgBelow: Double = 0
         
         if i != 0 {
-            avgAbove = framesReadAbove == 0 ? 0 : totalAbove / Float(framesReadAbove)
-            avgBelow = framesReadBelow == 0 ? 0 : totalBelow / Float(framesReadBelow)
+            avgAbove = framesReadAbove == 0 ? 0 : totalAbove / Double(framesReadAbove)
+            avgBelow = framesReadBelow == 0 ? 0 : totalBelow / Double(framesReadBelow)
         }
 
-        return .init(minValue: minValue, maxValue: maxValue,
+        return .init(minValue: Double(minValue), maxValue: Double(maxValue),
                      avgMinValue: avgBelow, avgMaxValue: avgAbove)
     }
     
     private mutating func generateCachePoint(fromCachePointsPerPixel cppp: UInt) -> SampleChannel.CachePoint {
-        var maxValue: Float = 0
-        var minValue: Float = 0
-        var totalAbove: Float = 0
-        var totalBelow: Float = 0
+        var maxValue: Double = 0
+        var minValue: Double = 0
+        var totalAbove: Double = 0
+        var totalBelow: Double = 0
         
         var i: UInt = 0
         while i < cppp {
-            guard let cp = nextCachePointAndAdvance() else {
+            guard let cp = cachePointAndAdvance() else {
                 break
             }
             
@@ -156,7 +156,7 @@ private extension SampleChannelIterator {
 
         return i == 0 ? .zero : .init(minValue: minValue,
                                       maxValue: maxValue,
-                                      avgMinValue: totalBelow / Float(i),
-                                      avgMaxValue: totalAbove / Float(i))
+                                      avgMinValue: totalBelow / Double(i),
+                                      avgMaxValue: totalAbove / Double(i))
     }
 }
