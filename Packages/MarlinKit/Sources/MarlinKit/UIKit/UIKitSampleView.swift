@@ -45,7 +45,7 @@ public class UIKitSampleView: UIView {
     }
     
     init(withSample sample: Sample? = nil) {
-        cursorLayer = Self.makeCursorLayer()
+        cursorLayer = CursorLayer()
         
         self.sample = sample
         super.init(frame: .zero)
@@ -96,15 +96,6 @@ public class UIKitSampleView: UIView {
 }
 
 private extension UIKitSampleView {
-    static func makeCursorLayer() -> CALayer {
-        let cursorLayer = CALayer()
-        cursorLayer.backgroundColor = UIColor.tintColor.cgColor
-        cursorLayer.zPosition = AdornmentLayerPriority.cursor
-        cursorLayer.anchorPoint = .init(x: 0, y: 0)
-        
-        return cursorLayer
-    }
-
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupLayers() {
         guard let sample else {

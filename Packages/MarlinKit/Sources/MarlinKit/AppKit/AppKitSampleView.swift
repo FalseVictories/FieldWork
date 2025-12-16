@@ -45,7 +45,7 @@ public class AppKitSampleView: NSView {
     }
         
     init(withSample sample: Sample? = nil) {
-        cursorLayer = Self.makeCursorLayer()
+        cursorLayer = CursorLayer()
         
         self.sample = sample
         super.init(frame: .zero)
@@ -105,15 +105,6 @@ public class AppKitSampleView: NSView {
 }
 
 private extension AppKitSampleView {
-    static func makeCursorLayer() -> CALayer {
-        let cursorLayer = CALayer()
-        cursorLayer.backgroundColor = NSColor.controlAccentColor.cgColor
-        cursorLayer.zPosition = AdornmentLayerPriority.cursor
-        cursorLayer.anchorPoint = .init(x: 0, y: 0)
-        
-        return cursorLayer
-    }
-    
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupWaveformLayers() {
         guard let sample else {
