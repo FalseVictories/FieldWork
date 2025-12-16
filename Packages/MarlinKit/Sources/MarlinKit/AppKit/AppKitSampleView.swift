@@ -4,6 +4,9 @@ import AppKit
 import Marlin
 
 public class AppKitSampleView: NSView {
+    private let cursorLayer: CALayer
+    private var waveformLayers: [CALayer] = []
+    
     var sample: Sample? {
         didSet {
             guard let sample else {
@@ -12,7 +15,7 @@ public class AppKitSampleView: NSView {
             
             if sample.isLoaded {
                 invalidateIntrinsicContentSize()
-                setupLayers()
+                setupWaveformLayers()
 
                 needsDisplay = true
             } else {
@@ -30,15 +33,25 @@ public class AppKitSampleView: NSView {
         }
     }
     
-    init() {
-        super.init(frame: .zero)
-        self.wantsLayer = true
+    var cursorFrame: UInt64 = 0 {
+        didSet {
+            if cursorFrame != oldValue {
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                cursorLayer.position = convertFrameToPoint(cursorFrame)
+                CATransaction.commit()
+            }
+        }
     }
-    
-    init(withSample sample: Sample) {
+        
+    init(withSample sample: Sample? = nil) {
+        cursorLayer = Self.makeCursorLayer()
+        
         self.sample = sample
         super.init(frame: .zero)
+        
         self.wantsLayer = true
+        layer?.addSublayer(cursorLayer)
     }
     
     @available(*, unavailable)
@@ -68,36 +81,58 @@ public class AppKitSampleView: NSView {
         let channelCount = sample.channels.count
         
         var channelNumber = 0
-        if let sublayers = layer?.sublayers {
-            let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
+        let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
+        
+        for waveformLayer in waveformLayers {
+            // Flip the channel positions so channel 0 is at the top and channel 1 below
+            let channelY = Int(frame.height) - (channelHeight * (channelNumber + 1) + (5 * channelNumber))
             
-            for sublayer in sublayers {
-                // Flip the channel positions so channel 0 is at the top and channel 1 below
-                let channelY = Int(frame.height) - (channelHeight * (channelNumber + 1) + (5 * channelNumber))
-                
-                sublayer.frame = CGRect(x: 0, y: channelY,
+            waveformLayer.frame = CGRect(x: 0, y: channelY,
                                          width: Int(width), height: channelHeight)
-                channelNumber += 1
-            }
+            channelNumber += 1
+        }
+        
+        let cursorPoint = convertFrameToPoint(cursorFrame)
+        cursorLayer.frame = CGRect(x: cursorPoint.x, y: 0, width: 1, height: frame.height)
+    }
+    
+    public override func mouseDown(with event: NSEvent) {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        if event.buttonNumber == 0 {
+            cursorFrame = convertPointToFrame(locationInView)
         }
     }
 }
 
 private extension AppKitSampleView {
+    static func makeCursorLayer() -> CALayer {
+        let cursorLayer = CALayer()
+        cursorLayer.backgroundColor = NSColor.controlAccentColor.cgColor
+        cursorLayer.zPosition = AdornmentLayerPriority.cursor
+        cursorLayer.anchorPoint = .init(x: 0, y: 0)
+        
+        return cursorLayer
+    }
+    
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
-    func setupLayers() {
+    func setupWaveformLayers() {
         guard let sample else {
             return
         }
+        
+        waveformLayers = []
         
         var channelNumber = 0
         for channel in sample.channels {
             let channelLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
+            channelLayer.zPosition = AdornmentLayerPriority.waveform
             channelLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
             channelLayer.cornerRadius = 6
             layer?.addSublayer(channelLayer)
             channelNumber += 1
+            
+            waveformLayers.append(channelLayer)
         }
     }
 
@@ -108,7 +143,7 @@ private extension AppKitSampleView {
     }
     
     func convertFrameToPoint(_ frame: UInt64) -> CGPoint {
-        let scaledPoint = CGPoint(x: Double(frame / UInt64(framesPerPixel)), y: 0.0)
+        let scaledPoint = CGPoint(x: Double(frame / UInt64(framesPerPixel)), y: 0)
         return convertFromBacking(scaledPoint)
     }
 }

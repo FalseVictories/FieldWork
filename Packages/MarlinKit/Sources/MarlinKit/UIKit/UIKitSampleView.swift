@@ -4,6 +4,9 @@ import UIKit
 import Marlin
 
 public class UIKitSampleView: UIView {
+    private let cursorLayer: CALayer
+    private var waveformLayers: [CALayer] = []
+    
     var sample: Sample? {
         didSet {
             guard let sample else {
@@ -30,13 +33,26 @@ public class UIKitSampleView: UIView {
         }
     }
     
-    init() {
-        super.init(frame: .zero)
+    var cursorFrame: UInt64 = 0 {
+        didSet {
+            if cursorFrame != oldValue {
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                cursorLayer.position = convertFrameToPoint(cursorFrame)
+                CATransaction.commit()
+            }
+        }
     }
     
-    init(withSample sample: Sample) {
+    init(withSample sample: Sample? = nil) {
+        cursorLayer = Self.makeCursorLayer()
+        
         self.sample = sample
         super.init(frame: .zero)
+        
+        layer.addSublayer(cursorLayer)
+        
+        setupGestureRecognisers()
     }
     
     @available(*, unavailable)
@@ -64,23 +80,31 @@ public class UIKitSampleView: UIView {
         let channelCount = sample.channels.count
         
         var channelNumber = 0
-        if let sublayers = layer.sublayers {
-            let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
-            
-            for sublayer in sublayers {
-                // Flip the channel positions so channel 0 is at the top and channel 1 below
-                let channelY = (channelNumber * (channelHeight + 5))
-                sublayer.frame = CGRect(x: 0, y: channelY,
+        let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
+        
+        for waveformLayer in waveformLayers {
+            // Flip the channel positions so channel 0 is at the top and channel 1 below
+            let channelY = (channelNumber * (channelHeight + 5))
+            waveformLayer.frame = CGRect(x: 0, y: channelY,
                                          width: Int(width), height: channelHeight)
-                channelNumber += 1
-                
-                sublayer.setNeedsDisplay()
-            }
+            channelNumber += 1
         }
+        
+        let cursorPoint = convertFrameToPoint(cursorFrame)
+        cursorLayer.frame = CGRect(x: cursorPoint.x, y: 0, width: 1, height: frame.height)
     }
 }
 
 private extension UIKitSampleView {
+    static func makeCursorLayer() -> CALayer {
+        let cursorLayer = CALayer()
+        cursorLayer.backgroundColor = UIColor.tintColor.cgColor
+        cursorLayer.zPosition = AdornmentLayerPriority.cursor
+        cursorLayer.anchorPoint = .init(x: 0, y: 0)
+        
+        return cursorLayer
+    }
+
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupLayers() {
         guard let sample else {
@@ -89,26 +113,47 @@ private extension UIKitSampleView {
         
         var channelNumber = 0
         for channel in sample.channels {
-            let channelLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+            let waveformLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
-            channelLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
-            channelLayer.cornerRadius = 6
-            layer.addSublayer(channelLayer)
+            waveformLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
+            waveformLayer.zPosition = AdornmentLayerPriority.waveform
+            waveformLayer.cornerRadius = 6
+            waveformLayer.setNeedsDisplay()
+            waveformLayers.append(waveformLayer)
+            
+            layer.addSublayer(waveformLayer)
+            
             channelNumber += 1
         }
     }
+    
+    func setupGestureRecognisers() {
+        let tapGesture = UITapGestureRecognizer(target: self,
+                                                action: #selector(handleTapGesture))
+        addGestureRecognizer(tapGesture)
+    }
 
-    /*
-    func convertPointToFrame(_ point: NSPoint) -> UInt64 {
-        let scaledPoint = convertToBacking(point)
+    @objc
+    func handleTapGesture(recogniser: UITapGestureRecognizer) {
+        guard recogniser.view != nil else {
+            return
+        }
         
-        return (scaledPoint.x < 0) ? 0 : UInt64(scaledPoint.x) * UInt64(framesPerPixel)
+        if recogniser.state == .ended {
+            let locationInView = recogniser.location(in: self)
+            cursorFrame = convertPointToFrame(locationInView)
+        }
+    }
+    
+    func convertPointToFrame(_ point: CGPoint) -> UInt64 {
+        let scaledX = point.x * contentScaleFactor
+        
+        return (scaledX < 0) ? 0 : UInt64(scaledX) * UInt64(framesPerPixel)
     }
     
     func convertFrameToPoint(_ frame: UInt64) -> CGPoint {
-        let scaledPoint = CGPoint(x: Double(frame / UInt64(framesPerPixel)), y: 0.0)
-        return convertFromBacking(scaledPoint)
+        let x = Double(frame / UInt64(framesPerPixel))
+        return CGPoint(x: x / contentScaleFactor, y: 0)
     }
-     */
 }
 #endif
