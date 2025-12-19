@@ -5,7 +5,7 @@ import Marlin
 
 public class AppKitSampleView: NSView {
     private let cursorLayer: CALayer
-    private var waveformLayers: [CALayer] = []
+    private var waveformLayers: [WaveformLayer] = []
     
     var sample: Sample? {
         didSet {
@@ -24,12 +24,26 @@ public class AppKitSampleView: NSView {
         }
     }
 
-    var framesPerPixel: UInt = 256 {
+    private var framesPerPixel: UInt = 256 {
         didSet {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
-                needsDisplay = true
+                
+                for waveformLayer in waveformLayers {
+                    waveformLayer.framesPerPixel = framesPerPixel
+                }
+                needsLayout = true
             }
+        }
+    }
+    
+    public func setFramesPerPixel(_ fpp: UInt) {
+        if fpp < 1 {
+            framesPerPixel = 1
+        } else if fpp > 2048 {
+            framesPerPixel = 2048
+        } else {
+            framesPerPixel = fpp
         }
     }
     
@@ -115,7 +129,9 @@ private extension AppKitSampleView {
         
         var channelNumber = 0
         for channel in sample.channels {
-            let channelLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+            let channelLayer = WaveformLayer(channel: channel,
+                                                  initialFramesPerPixel: framesPerPixel,
+                                                  strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
             channelLayer.zPosition = AdornmentLayerPriority.waveform
             channelLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor

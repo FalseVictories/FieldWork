@@ -6,6 +6,7 @@ struct ContentView: View {
     static let sampleUrl = URL(filePath: "/Users/iain/Music/betteroffalone.mp3")
     @State var sample: Sample
     @State var text: String = ""
+    @State var framesPerPixel: UInt = 256
     
     init() {
         let s = Sample()
@@ -30,7 +31,17 @@ struct ContentView: View {
             
             if sample.isLoaded {
                 ScrollView(.horizontal) {
-                    SampleView(sample: sample)
+                    SampleView(sample: sample, framesPerPixel: $framesPerPixel)
+                }
+                
+                HStack {
+                    Button("Zoom In") {
+                        framesPerPixel /= 2
+                    }
+                    
+                    Button("Zoom Out") {
+                        framesPerPixel *= 2
+                    }
                 }
                 
                 Text("Filename: \(Self.sampleUrl.lastPathComponent)")

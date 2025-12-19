@@ -5,7 +5,11 @@ import Marlin
 
 public class UIKitSampleView: UIView {
     private let cursorLayer: CALayer
-    private var waveformLayers: [CALayer] = []
+    private var waveformLayers: [WaveformLayer] = []
+    private var canSelect: Bool = false
+    private var summedMagnificationLevel: UInt = 256;
+    private var previousPinchScale: CGFloat = 0
+    private var currentPinchScale: CGFloat = 0
     
     var sample: Sample? {
         didSet {
@@ -16,20 +20,35 @@ public class UIKitSampleView: UIView {
             if sample.isLoaded {
                 invalidateIntrinsicContentSize()
                 setupLayers()
-
+                
                 setNeedsDisplay()
             } else {
                 // FIXME - observe isLoaded changing
             }
         }
     }
-
-    var framesPerPixel: UInt = 256 {
+    
+    private var framesPerPixel: Int = 256 {
         didSet {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
                 setNeedsDisplay()
+                setNeedsLayout()
+                
+                for waveformLayer in waveformLayers {
+                    waveformLayer.framesPerPixel = UInt(framesPerPixel)
+                }
             }
+        }
+    }
+    
+    func setFramesPerPixel(_ fpp: Int) {
+        if fpp < 1 {
+            framesPerPixel = 1
+        } else if fpp > 2048 {
+            framesPerPixel = 2048
+        } else {
+            framesPerPixel = fpp
         }
     }
     
@@ -61,11 +80,11 @@ public class UIKitSampleView: UIView {
     }
     
     var width: CGFloat {
-        guard let sample = sample else {
+        guard let sample else {
             return UIView.noIntrinsicMetric
         }
-        
-        return ceil(CGFloat(sample.numberOfFrames) / CGFloat(framesPerPixel))
+
+        return ceil((CGFloat(sample.numberOfFrames) / CGFloat(framesPerPixel)) / contentScaleFactor)
     }
     
     public override var intrinsicContentSize: CGSize {
@@ -86,12 +105,30 @@ public class UIKitSampleView: UIView {
             // Flip the channel positions so channel 0 is at the top and channel 1 below
             let channelY = (channelNumber * (channelHeight + 5))
             waveformLayer.frame = CGRect(x: 0, y: channelY,
-                                         width: Int(width), height: channelHeight)
+                                         width: Int(width),
+                                         height: channelHeight)
+            
             channelNumber += 1
         }
         
         let cursorPoint = convertFrameToPoint(cursorFrame)
         cursorLayer.frame = CGRect(x: cursorPoint.x, y: 0, width: 1, height: frame.height)
+    }
+    
+    override public func touchesBegan(_ touches: Set<UITouch>,
+                                      with event: UIEvent?) {
+        print("touches began")
+    }
+    
+    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        print("touches ended")
+        canSelect = false
+    }
+    
+    override public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if canSelect {
+            print("touches moved")
+        }
     }
 }
 
@@ -104,7 +141,9 @@ private extension UIKitSampleView {
         
         var channelNumber = 0
         for channel in sample.channels {
-            let waveformLayer = SampleChannelLayer(channel: channel, strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+            let waveformLayer = WaveformLayer(channel: channel,
+                                                   initialFramesPerPixel: UInt(framesPerPixel),
+                                                   strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
             waveformLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
             waveformLayer.zPosition = AdornmentLayerPriority.waveform
@@ -122,8 +161,17 @@ private extension UIKitSampleView {
         let tapGesture = UITapGestureRecognizer(target: self,
                                                 action: #selector(handleTapGesture))
         addGestureRecognizer(tapGesture)
+        
+        let dblTapGesture = UITapGestureRecognizer(target: self,
+                                                   action: #selector(handleDoubleTapGesture))
+        dblTapGesture.numberOfTapsRequired = 2
+        addGestureRecognizer(dblTapGesture)
+        
+        let pinchGesture = UIPinchGestureRecognizer(target: self,
+                                                    action: #selector(handlePinchGesture))
+        addGestureRecognizer(pinchGesture)
     }
-
+    
     @objc
     func handleTapGesture(recogniser: UITapGestureRecognizer) {
         guard recogniser.view != nil else {
@@ -133,6 +181,36 @@ private extension UIKitSampleView {
         if recogniser.state == .ended {
             let locationInView = recogniser.location(in: self)
             cursorFrame = convertPointToFrame(locationInView)
+        }
+    }
+    
+    @objc
+    func handleDoubleTapGesture(recogniser: UITapGestureRecognizer) {
+        guard recogniser.view != nil else {
+            return
+        }
+        
+        if recogniser.state == .ended {
+            canSelect = true
+        }
+    }
+    
+    @objc
+    func handlePinchGesture(recogniser: UIPinchGestureRecognizer) {
+        guard recogniser.view != nil else {
+            return
+        }
+        
+        if recogniser.state == .began {
+            previousPinchScale = recogniser.scale
+        } else if recogniser.state == .changed {
+            currentPinchScale += (recogniser.scale - previousPinchScale)
+            if abs(currentPinchScale) > 0.25 {
+                let newFPP = Double(framesPerPixel) * (currentPinchScale > 0 ? 0.5 : 2)
+                
+                setFramesPerPixel(Int(newFPP))
+                currentPinchScale = 0
+            }
         }
     }
     
