@@ -3,7 +3,7 @@ import MarlinKit
 import SwiftUI
 
 struct ContentView: View {
-    static let sampleUrl = URL(filePath: "/Users/iain/Music/betteroffalone.mp3")
+    static let sampleUrl = Bundle.main.url(forResource: "new-cascadia", withExtension: "flac")!
     @State var sample: Sample
     @State var text: String = ""
     @State var framesPerPixel: UInt = 256
