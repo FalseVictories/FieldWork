@@ -36,12 +36,17 @@ struct ContentView: View {
                 
                 HStack {
                     Button("Zoom In") {
-                        framesPerPixel /= 2
+                        let newFramesPerPixel = framesPerPixel / 2
+                        framesPerPixel = newFramesPerPixel < 1 ? 1 : newFramesPerPixel
                     }
                     
                     Button("Zoom Out") {
                         framesPerPixel *= 2
                     }
+                    
+                    Spacer()
+                    
+                    Text("Frames Per Pixel: \(framesPerPixel)")
                 }
                 
                 Text("Filename: \(Self.sampleUrl.lastPathComponent)")
