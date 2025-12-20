@@ -65,7 +65,7 @@ private extension CursorLayer {
     }
 }
 
-#if DEBUG
+#if DEBUG && os(macOS)
 private class CursorPreviewView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -85,4 +85,4 @@ private class CursorPreviewView: NSView {
 #Preview {
     CursorPreviewView(frame:.init(x: 0, y: 0, width: 200, height: 200))
 }
-#endif
+#endif // DEBUG && os(macOS)
