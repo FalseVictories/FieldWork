@@ -87,8 +87,11 @@ public class UIKitSampleView: UIView {
         return ceil((CGFloat(sample.numberOfFrames) / CGFloat(framesPerPixel)) / contentScaleFactor)
     }
     
+    @Invalidating(.intrinsicContentSize)
+    var height: CGFloat = UIView.noIntrinsicMetric
+    
     public override var intrinsicContentSize: CGSize {
-        return .init(width: width, height: UIView.noIntrinsicMetric)
+        return .init(width: width, height: height)
     }
     
     public override func layoutSublayers(of layer: CALayer) {

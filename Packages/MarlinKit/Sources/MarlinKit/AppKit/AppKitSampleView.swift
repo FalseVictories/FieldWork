@@ -3,7 +3,7 @@ import AppKit
 
 import Marlin
 
-public class AppKitSampleView: NSView {
+public final class AppKitSampleView: NSView {
     private let cursorLayer: CALayer
     private var waveformLayers: [WaveformLayer] = []
     
@@ -154,4 +154,4 @@ private extension AppKitSampleView {
         return convertFromBacking(scaledPoint)
     }
 }
-#endif
+#endif // os(macOS)

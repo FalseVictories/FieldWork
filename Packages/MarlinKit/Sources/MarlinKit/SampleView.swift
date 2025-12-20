@@ -18,27 +18,29 @@ public struct SampleView: PlatformViewControllerRepresentable {
     }
     
     #if os(macOS)
-    public func makeNSView(context: Context) -> AppKitSampleView {
-        let sampleView = AppKitSampleView()
-        sampleView.sample = sample
-        return sampleView
+    public func makeNSView(context: Context) -> AppKitSampleScrollView {
+        let scrollView = AppKitSampleScrollView()
+        scrollView.sampleView.sample = sample
+        return scrollView
     }
     
-    public func updateNSView(_ view: AppKitSampleView,
+    public func updateNSView(_ view: AppKitSampleScrollView,
                              context: Context) {
-        view.setFramesPerPixel(framesPerPixel)
+        let sampleView = view.sampleView
+        sampleView.setFramesPerPixel(framesPerPixel)
     }
     
     #elseif os(iOS)
-    public func makeUIView(context: Context) -> UIKitSampleView {
-        let sampleView = UIKitSampleView()
-        sampleView.sample = sample
-        return sampleView
+    public func makeUIView(context: Context) -> UIKitSampleScrollView {
+        let scrollView = UIKitSampleScrollView(frame: .zero)
+        scrollView.sampleView.sample = sample
+        return scrollView
     }
     
-    public func updateUIView(_ uiView: UIKitSampleView,
+    public func updateUIView(_ uiView: UIKitSampleScrollView,
                              context: Context) {
-        uiView.setFramesPerPixel(Int(framesPerPixel))
+        let sampleView = uiView.sampleView
+        sampleView.setFramesPerPixel(Int(framesPerPixel))
     }
     #endif
 }

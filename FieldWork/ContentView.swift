@@ -30,9 +30,7 @@ struct ContentView: View {
             }
             
             if sample.isLoaded {
-                ScrollView(.horizontal) {
-                    SampleView(sample: sample, framesPerPixel: $framesPerPixel)
-                }
+                SampleView(sample: sample, framesPerPixel: $framesPerPixel)
                 
                 HStack {
                     Button("Zoom In") {
