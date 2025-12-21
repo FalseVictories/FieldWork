@@ -6,10 +6,27 @@ import Marlin
 public class UIKitSampleView: UIView {
     private let cursorLayer: CALayer
     private var waveformLayers: [WaveformLayer] = []
-    private var canSelect: Bool = false
+    
     private var summedMagnificationLevel: UInt = 256;
     private var previousPinchScale: CGFloat = 0
     private var currentPinchScale: CGFloat = 0
+
+    private var selecting: Bool = false
+    private var hasSelection: Bool = false
+    
+    private enum Extending {
+        case start
+        case end
+    }
+    private var extending: Extending = .end
+    
+    @Invalidating(.layout)
+    private var selectionStartFrame: UInt64 = 0
+    
+    @Invalidating(.layout)
+    private var selectionEndFrame: UInt64 = 0
+    private var selectionBackground: CALayer?
+    private var selectionOutline: CALayer?
     
     var sample: Sample? {
         didSet {
@@ -55,10 +72,13 @@ public class UIKitSampleView: UIView {
     var cursorFrame: UInt64 = 0 {
         didSet {
             if cursorFrame != oldValue {
+                cursorLayer.isHidden = false
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
                 cursorLayer.position = convertFrameToPoint(cursorFrame)
                 CATransaction.commit()
+                
+                resetSelection()
             }
         }
     }
@@ -116,21 +136,22 @@ public class UIKitSampleView: UIView {
         
         let cursorPoint = convertFrameToPoint(cursorFrame)
         cursorLayer.frame = CGRect(x: cursorPoint.x, y: 0, width: 1, height: frame.height)
-    }
-    
-    override public func touchesBegan(_ touches: Set<UITouch>,
-                                      with event: UIEvent?) {
-        print("touches began")
-    }
-    
-    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        print("touches ended")
-        canSelect = false
-    }
-    
-    override public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if canSelect {
-            print("touches moved")
+        
+        if let selectionBackground, let selectionOutline {
+            let startPoint = convertFrameToPoint(selectionStartFrame)
+            let endPoint = convertFrameToPoint(selectionEndFrame)
+            
+            let selectionFrame = CGRect(x: startPoint.x, y: 0,
+                                        width: endPoint.x - startPoint.x,
+                                        height: frame.height)
+            
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            
+            selectionBackground.frame = selectionFrame
+            selectionOutline.frame = selectionFrame
+            
+            CATransaction.commit()
         }
     }
 }
@@ -145,8 +166,8 @@ private extension UIKitSampleView {
         var channelNumber = 0
         for channel in sample.channels {
             let waveformLayer = WaveformLayer(channel: channel,
-                                                   initialFramesPerPixel: UInt(framesPerPixel),
-                                                   strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+                                              initialFramesPerPixel: UInt(framesPerPixel),
+                                              strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
             waveformLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
             waveformLayer.zPosition = AdornmentLayerPriority.waveform
@@ -159,7 +180,10 @@ private extension UIKitSampleView {
             channelNumber += 1
         }
     }
-    
+}
+
+// - MARK: Gesture recognisers
+private extension UIKitSampleView {
     func setupGestureRecognisers() {
         let tapGesture = UITapGestureRecognizer(target: self,
                                                 action: #selector(handleTapGesture))
@@ -173,6 +197,10 @@ private extension UIKitSampleView {
         let pinchGesture = UIPinchGestureRecognizer(target: self,
                                                     action: #selector(handlePinchGesture))
         addGestureRecognizer(pinchGesture)
+        
+        let longPressGesture = UILongPressGestureRecognizer(target: self,
+                                                            action: #selector(handleLongPressGesture))
+        addGestureRecognizer(longPressGesture)
     }
     
     @objc
@@ -191,10 +219,6 @@ private extension UIKitSampleView {
     func handleDoubleTapGesture(recogniser: UITapGestureRecognizer) {
         guard recogniser.view != nil else {
             return
-        }
-        
-        if recogniser.state == .ended {
-            canSelect = true
         }
     }
     
@@ -217,6 +241,93 @@ private extension UIKitSampleView {
         }
     }
     
+    @objc
+    func handleLongPressGesture(recogniser: UILongPressGestureRecognizer) {
+        guard recogniser.view != nil else {
+            return
+        }
+        
+        switch recogniser.state {
+        case .began:
+            resetSelection()
+            
+            selecting = true
+            extending = .end
+            selectionStartFrame = convertPointToFrame(recogniser.location(in: self))
+            selectionEndFrame = selectionStartFrame
+            
+            createSelectionLayers()
+
+        case .changed:
+            let newSelectionEnd = convertPointToFrame(recogniser.location(in: self))
+            extendSelection(toFrame: newSelectionEnd)
+            
+            cursorLayer.isHidden = true
+            
+        case .ended:
+            selecting = false
+            
+        default:
+            break
+        }
+    }
+}
+
+// - MARK: Selection
+private extension UIKitSampleView {
+    func createSelectionLayers() {
+        let selectionBackground = CALayer()
+        selectionBackground.backgroundColor = UIColor.tertiarySystemFill.cgColor
+        selectionBackground.cornerRadius = 6
+        selectionBackground.zPosition = AdornmentLayerPriority.selectionBackground
+        
+        let selectionOutline = CALayer()
+        selectionOutline.borderColor = UIColor.tintColor.cgColor
+        selectionOutline.cornerRadius = 6
+        selectionOutline.borderWidth = 2
+        selectionOutline.zPosition = AdornmentLayerPriority.selection
+        
+        layer.addSublayer(selectionBackground)
+        layer.addSublayer(selectionOutline)
+        
+        self.selectionBackground = selectionBackground
+        self.selectionOutline = selectionOutline
+    }
+    
+    func resetSelection() {
+        selectionBackground?.removeFromSuperlayer()
+        selectionOutline?.removeFromSuperlayer()
+        selectionStartFrame = 0
+        selectionEndFrame = 0
+    }
+    
+    // Extend selection following the value at extending
+    // switching the extending direction if necessary
+    func extendSelection(toFrame frame: UInt64) {
+        switch extending {
+        case .end:
+            if frame < selectionStartFrame {
+                selectionEndFrame = selectionStartFrame
+                selectionStartFrame = frame
+                extending = .start
+            } else {
+                selectionEndFrame = frame
+            }
+            
+        case .start:
+            if frame > selectionEndFrame {
+                selectionStartFrame = selectionEndFrame
+                selectionEndFrame = frame
+                extending = .end
+            } else {
+                selectionStartFrame = frame
+            }
+        }
+    }
+}
+
+// - MARK: Helpers
+private extension UIKitSampleView {
     func convertPointToFrame(_ point: CGPoint) -> UInt64 {
         let scaledX = point.x * contentScaleFactor
         
