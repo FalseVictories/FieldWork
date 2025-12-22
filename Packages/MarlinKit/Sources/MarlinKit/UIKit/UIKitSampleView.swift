@@ -14,17 +14,11 @@ public class UIKitSampleView: UIView {
     private var selecting: Bool = false
     private var hasSelection: Bool = false
     
-    private enum Extending {
-        case start
-        case end
-    }
-    private var extending: Extending = .end
-    
+    private var extending: SelectionExtendingDirection = .end
+
     @Invalidating(.layout)
-    private var selectionStartFrame: UInt64 = 0
-    
-    @Invalidating(.layout)
-    private var selectionEndFrame: UInt64 = 0
+    var selection: Selection = .zero
+
     private var selectionBackground: CALayer?
     private var selectionOutline: CALayer?
     
@@ -138,8 +132,8 @@ public class UIKitSampleView: UIView {
         cursorLayer.frame = CGRect(x: cursorPoint.x, y: 0, width: 1, height: frame.height)
         
         if let selectionBackground, let selectionOutline {
-            let startPoint = convertFrameToPoint(selectionStartFrame)
-            let endPoint = convertFrameToPoint(selectionEndFrame)
+            let startPoint = convertFrameToPoint(selection.selectedRange.lowerBound)
+            let endPoint = convertFrameToPoint(selection.selectedRange.upperBound)
             
             let selectionFrame = CGRect(x: startPoint.x, y: 0,
                                         width: endPoint.x - startPoint.x,
@@ -169,10 +163,7 @@ private extension UIKitSampleView {
                                               initialFramesPerPixel: UInt(framesPerPixel),
                                               strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
             
-            waveformLayer.backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
             waveformLayer.zPosition = AdornmentLayerPriority.waveform
-            waveformLayer.cornerRadius = 6
-            waveformLayer.setNeedsDisplay()
             waveformLayers.append(waveformLayer)
             
             layer.addSublayer(waveformLayer)
@@ -253,8 +244,8 @@ private extension UIKitSampleView {
             
             selecting = true
             extending = .end
-            selectionStartFrame = convertPointToFrame(recogniser.location(in: self))
-            selectionEndFrame = selectionStartFrame
+            let startFrame = convertPointToFrame(recogniser.location(in: self))
+            selection = .init(startFrame: startFrame, endFrame: startFrame)
             
             createSelectionLayers()
 
@@ -297,30 +288,37 @@ private extension UIKitSampleView {
     func resetSelection() {
         selectionBackground?.removeFromSuperlayer()
         selectionOutline?.removeFromSuperlayer()
-        selectionStartFrame = 0
-        selectionEndFrame = 0
+        selection = .zero
     }
     
     // Extend selection following the value at extending
     // switching the extending direction if necessary
     func extendSelection(toFrame frame: UInt64) {
+        guard let sample else {
+            return
+        }
+        
+        let frame = min(frame, sample.numberOfFrames - 1)
+        
+        if selection.isEmpty {
+            selection = .init(startFrame: frame, endFrame: frame)
+        }
+        
         switch extending {
         case .end:
-            if frame < selectionStartFrame {
-                selectionEndFrame = selectionStartFrame
-                selectionStartFrame = frame
+            if frame < selection.selectedRange.lowerBound {
+                selection = .init(startFrame: frame, endFrame: selection.selectedRange.lowerBound)
                 extending = .start
             } else {
-                selectionEndFrame = frame
+                selection = .init(startFrame: selection.selectedRange.lowerBound, endFrame: frame)
             }
             
         case .start:
-            if frame > selectionEndFrame {
-                selectionStartFrame = selectionEndFrame
-                selectionEndFrame = frame
+            if frame > selection.selectedRange.upperBound {
+                selection = .init(startFrame: selection.selectedRange.upperBound, endFrame: frame)
                 extending = .end
             } else {
-                selectionStartFrame = frame
+                selection = .init(startFrame: frame, endFrame: selection.selectedRange.upperBound)
             }
         }
     }

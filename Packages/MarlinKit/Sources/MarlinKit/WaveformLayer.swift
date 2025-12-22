@@ -31,6 +31,7 @@ class WaveformLayer: CATiledLayer {
         super.init()
         
         needsDisplayOnBoundsChange = true
+        cornerRadius = 6
     }
     
     override init(layer: Any) {
@@ -43,6 +44,10 @@ class WaveformLayer: CATiledLayer {
         }
         
         super.init(layer: layer)
+        
+        needsDisplayOnBoundsChange = true
+        backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
+        cornerRadius = 6
     }
     
     @available(*, unavailable)
@@ -60,10 +65,6 @@ class WaveformLayer: CATiledLayer {
         let minMaxPath = PlatformBezierPath()
         let rmsPath = PlatformBezierPath()
 
-//        ctx.clear(clipRect)
-        
-//        ctx.setFillColor(NSColor.purple.cgColor)
-//        ctx.fill(clipRect)
         // Add an offset to centre the waveform
         let offsetBounds = CGRect(x: clipRect.minX,
                                   y: bounds.minY + (bounds.height / 2),
