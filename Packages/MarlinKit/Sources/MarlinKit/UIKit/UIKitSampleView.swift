@@ -4,6 +4,10 @@ import UIKit
 import Marlin
 
 public class UIKitSampleView: UIView {
+    static let autoScrollEdgeToleranceDefault: CGFloat = 80.0;
+    static let autoScrollMaxVelocityDefault: CGFloat = 4.0;
+    static let autoScrollVelocityDefault: CGFloat = 0.1;
+
     private let cursorLayer: CALayer
     private var waveformLayers: [WaveformLayer] = []
     
@@ -21,6 +25,9 @@ public class UIKitSampleView: UIView {
 
     private var selectionBackground: CALayer?
     private var selectionOutline: CALayer?
+    private var selectionScrollTimer: Timer?
+    private var lastDragPoint: CGPoint = .zero
+    private var lastDragFrame: UInt64 = 0
     
     var sample: Sample? {
         didSet {
@@ -202,6 +209,7 @@ private extension UIKitSampleView {
         
         if recogniser.state == .ended {
             let locationInView = recogniser.location(in: self)
+            
             cursorFrame = convertPointToFrame(locationInView)
         }
     }
@@ -234,10 +242,10 @@ private extension UIKitSampleView {
     
     @objc
     func handleLongPressGesture(recogniser: UILongPressGestureRecognizer) {
-        guard recogniser.view != nil else {
+        guard recogniser.view != nil, let scrollView = superview as? UIScrollView else {
             return
         }
-        
+
         switch recogniser.state {
         case .began:
             resetSelection()
@@ -250,17 +258,30 @@ private extension UIKitSampleView {
             createSelectionLayers()
 
         case .changed:
-            let newSelectionEnd = convertPointToFrame(recogniser.location(in: self))
+            let locationInView = recogniser.location(in: self)
+            let newSelectionEnd = convertPointToFrame(locationInView)
             extendSelection(toFrame: newSelectionEnd)
             
             cursorLayer.isHidden = true
             
+            let locationInScrollview = recogniser.location(in: scrollView)
+            
+            autoScroll(toLocationInView: locationInView,
+                       locationInScrollView: CGPoint(x: locationInScrollview.x - scrollView.contentOffset.x, y: 0),
+                       scrollView: scrollView)
+            
         case .ended:
             selecting = false
+            autoscrollCancelled()
             
         default:
             break
         }
+    }
+    
+    private func autoscrollCancelled() {
+        selectionScrollTimer?.invalidate()
+        selectionScrollTimer = nil
     }
 }
 
@@ -321,6 +342,93 @@ private extension UIKitSampleView {
                 selection = .init(startFrame: frame, endFrame: selection.selectedRange.upperBound)
             }
         }
+    }
+}
+
+// - MARK: Drag scroll
+private extension UIKitSampleView {
+    func autoScroll(toLocationInView locationInView: CGPoint,
+                    locationInScrollView: CGPoint,
+                    scrollView: UIScrollView) {
+        let contentOffset = scrollView.contentOffset
+        
+        lastDragPoint = locationInScrollView
+        lastDragFrame = convertPointToFrame(locationInView)
+        
+        extendSelection(toFrame: lastDragFrame)
+        
+        // If the timer is running then we just need to wait for it to update
+        // the selection
+        if selectionScrollTimer != nil {
+            return
+        }
+        
+        let scrollDelta = dragScrollDelta(locationInScrollView, scrollView: scrollView)
+        
+        if scrollDelta != .zero {
+            let p = CGPoint(x: contentOffset.x + scrollDelta, y: contentOffset.y)
+            scrollView.setContentOffset(p, animated: false)
+            
+            if selectionScrollTimer == nil {
+                selectionScrollTimer = Timer.scheduledTimer(withTimeInterval: 0.01,
+                                                            repeats: true) { [weak self] _ in
+                    guard let self else {
+                        return
+                    }
+                    
+                    // Run task on MainActor cos the timer runs on a different thread
+                    Task { @MainActor in
+                        let scrollDelta = dragScrollDelta(lastDragPoint, scrollView: scrollView)
+                        if scrollDelta != .zero {
+                            let contentOffset = scrollView.contentOffset
+                            let p = CGPoint(x: contentOffset.x + scrollDelta, y: contentOffset.y)
+
+                            scrollView.setContentOffset(p, animated: false)
+                            
+                            // Add the amount scrolled to the selection
+                            let newDragFrame = Int64(lastDragFrame) + Int64(scrollDelta) * Int64(framesPerPixel)
+                            
+                            lastDragFrame = UInt64(max(newDragFrame, 0))
+                            extendSelection(toFrame: lastDragFrame)
+                        } else {
+                            autoscrollCancelled()
+                        }
+                    }
+                }
+            }
+        } else {
+            autoscrollCancelled()
+        }
+    }
+    
+    func dragScrollDelta(_ point: CGPoint, scrollView: UIScrollView) -> CGFloat {
+        var deltaX: CGFloat = 0
+        
+        if point.x < Self.autoScrollEdgeToleranceDefault {
+            // Scroll left
+            deltaX = -4
+        } else if point.x > scrollView.bounds.width - Self.autoScrollEdgeToleranceDefault {
+            // scroll right
+            deltaX = 4
+        } else {
+        }
+        
+        if deltaX != 0.0 {
+            if scrollView.contentOffset.x + deltaX < 0.0 {
+                deltaX = -scrollView.contentOffset.x;
+            } else {
+                var maxOffset = scrollView.contentSize.width - scrollView.frame.size.width;
+                if maxOffset < 0.0 {
+                    maxOffset = 0.0;
+                }
+                
+                if scrollView.contentOffset.x + deltaX > maxOffset {
+                    deltaX = maxOffset - scrollView.contentOffset.x;
+                }
+            }
+        }
+        
+        return deltaX
     }
 }
 

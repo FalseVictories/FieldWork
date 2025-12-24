@@ -2,6 +2,7 @@
 import UIKit
 
 public final class UIKitSampleScrollView: UIScrollView {
+    static let scrollViewTag = 0x7363726c
     let sampleView: UIKitSampleView
     
     public override init(frame: CGRect) {
@@ -9,6 +10,7 @@ public final class UIKitSampleScrollView: UIScrollView {
         
         super.init(frame: frame)
         
+        tag = Self.scrollViewTag
         addSubview(sampleView)
         
         translatesAutoresizingMaskIntoConstraints = false
