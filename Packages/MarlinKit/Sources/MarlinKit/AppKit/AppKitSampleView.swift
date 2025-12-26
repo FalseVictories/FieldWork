@@ -303,8 +303,7 @@ private extension AppKitSampleView {
         var channelNumber = 0
         for channel in sample.channels {
             let channelLayer = WaveformLayer(channel: channel,
-                                             initialFramesPerPixel: framesPerPixel,
-                                             strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+                                             initialFramesPerPixel: framesPerPixel)
             
             channelLayer.zPosition = AdornmentLayerPriority.waveform
             layer?.addSublayer(channelLayer)
@@ -319,12 +318,12 @@ private extension AppKitSampleView {
 private extension AppKitSampleView {
     func createSelectionLayers() {
         let selectionBackground = CALayer()
-        selectionBackground.backgroundColor = NSColor.tertiarySystemFill.cgColor
+        selectionBackground.backgroundColor = knownCGColor(.selectionBackground)
         selectionBackground.cornerRadius = 6
         selectionBackground.zPosition = AdornmentLayerPriority.selectionBackground
         
         let selectionOutline = CALayer()
-        selectionOutline.borderColor = NSColor.selectedTextBackgroundColor.cgColor
+        selectionOutline.borderColor = knownCGColor(.selectionOutline)
         selectionOutline.cornerRadius = 6
         selectionOutline.borderWidth = 2
         selectionOutline.zPosition = AdornmentLayerPriority.selection

@@ -167,8 +167,7 @@ private extension UIKitSampleView {
         var channelNumber = 0
         for channel in sample.channels {
             let waveformLayer = WaveformLayer(channel: channel,
-                                              initialFramesPerPixel: UInt(framesPerPixel),
-                                              strokeColor: Self.channelColors[channelNumber % Self.channelColors.count])
+                                              initialFramesPerPixel: UInt(framesPerPixel))
             
             waveformLayer.zPosition = AdornmentLayerPriority.waveform
             waveformLayers.append(waveformLayer)
@@ -290,12 +289,12 @@ private extension UIKitSampleView {
 private extension UIKitSampleView {
     func createSelectionLayers() {
         let selectionBackground = CALayer()
-        selectionBackground.backgroundColor = UIColor.tertiarySystemFill.cgColor
+        selectionBackground.backgroundColor = knownCGColor(.selectionBackground)
         selectionBackground.cornerRadius = 6
         selectionBackground.zPosition = AdornmentLayerPriority.selectionBackground
         
         let selectionOutline = CALayer()
-        selectionOutline.borderColor = UIColor.tintColor.cgColor
+        selectionOutline.borderColor = knownCGColor(.selectionOutline)
         selectionOutline.cornerRadius = 6
         selectionOutline.borderWidth = 2
         selectionOutline.zPosition = AdornmentLayerPriority.selection

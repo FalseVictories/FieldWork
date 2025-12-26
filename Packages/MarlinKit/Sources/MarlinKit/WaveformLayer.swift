@@ -22,14 +22,14 @@ class WaveformLayer: CATiledLayer {
     }
     
     init(channel: SampleChannel,
-         initialFramesPerPixel: UInt,
-         strokeColor: PlatformColor) {
+         initialFramesPerPixel: UInt) {
         self.channel = channel
         self.framesPerPixel = initialFramesPerPixel
-        self.strokeColor = strokeColor
+        self.strokeColor = knownColor(.waveform)
         
         super.init()
         
+        backgroundColor = knownCGColor(.waveformBackground)
         needsDisplayOnBoundsChange = true
         cornerRadius = 6
     }
@@ -46,7 +46,6 @@ class WaveformLayer: CATiledLayer {
         super.init(layer: layer)
         
         needsDisplayOnBoundsChange = true
-        backgroundColor = PlatformColor.systemGray.withAlphaComponent(0.3).cgColor
         cornerRadius = 6
     }
     
