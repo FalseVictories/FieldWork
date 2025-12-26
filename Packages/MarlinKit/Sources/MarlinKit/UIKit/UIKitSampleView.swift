@@ -231,6 +231,7 @@ private extension UIKitSampleView {
             previousPinchScale = recogniser.scale
         } else if recogniser.state == .changed {
             currentPinchScale += (recogniser.scale - previousPinchScale)
+            previousPinchScale = recogniser.scale
             if abs(currentPinchScale) > 0.25 {
                 let newFPP = Double(framesPerPixel) * (currentPinchScale > 0 ? 0.5 : 2)
                 
