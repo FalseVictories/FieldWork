@@ -255,6 +255,8 @@ private extension UIKitSampleView {
             let startFrame = convertPointToFrame(recogniser.location(in: self))
             selection = .init(startFrame: startFrame, endFrame: startFrame)
             
+            // Move cursor to the start frame
+            cursorFrame = startFrame
             createSelectionLayers()
 
         case .changed:
