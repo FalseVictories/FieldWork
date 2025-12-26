@@ -319,7 +319,7 @@ private extension AppKitSampleView {
 private extension AppKitSampleView {
     func createSelectionLayers() {
         let selectionBackground = CALayer()
-        selectionBackground.backgroundColor = NSColor.selectedContentBackgroundColor.cgColor
+        selectionBackground.backgroundColor = NSColor.tertiarySystemFill.cgColor
         selectionBackground.cornerRadius = 6
         selectionBackground.zPosition = AdornmentLayerPriority.selectionBackground
         
