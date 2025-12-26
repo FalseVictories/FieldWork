@@ -8,7 +8,7 @@ public class UIKitSampleView: UIView {
     static let autoScrollMaxVelocityDefault: CGFloat = 4.0;
     static let autoScrollVelocityDefault: CGFloat = 0.1;
 
-    private let cursorLayer: CALayer
+    private let cursorLayer: CursorLayer
     private var waveformLayers: [WaveformLayer] = []
     
     private var summedMagnificationLevel: UInt = 256;
@@ -69,15 +69,12 @@ public class UIKitSampleView: UIView {
             framesPerPixel = fpp
         }
     }
-    
+  
+    @Invalidating(.layout)
     var cursorFrame: UInt64 = 0 {
         didSet {
             if cursorFrame != oldValue {
                 cursorLayer.isHidden = false
-                CATransaction.begin()
-                CATransaction.setDisableActions(true)
-                cursorLayer.position = convertFrameToPoint(cursorFrame)
-                CATransaction.commit()
                 
                 resetSelection()
             }
@@ -258,7 +255,10 @@ private extension UIKitSampleView {
             // Move cursor to the start frame
             cursorFrame = startFrame
             createSelectionLayers()
-
+            
+            layoutIfNeeded() // Force the pending layout so the pulse won't get cancelled
+            cursorLayer.pulseCursor()
+            
         case .changed:
             let locationInView = recogniser.location(in: self)
             let newSelectionEnd = convertPointToFrame(locationInView)

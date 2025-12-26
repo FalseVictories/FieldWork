@@ -58,15 +58,11 @@ public final class AppKitSampleView: NSView {
             framesPerPixel = fpp
         }
     }
-    
+  
+    @Invalidating(.layout)
     var cursorFrame: UInt64 = 0 {
         didSet {
             if cursorFrame != oldValue {
-                CATransaction.begin()
-                CATransaction.setDisableActions(true)
-                cursorLayer.position = convertFrameToPoint(cursorFrame)
-                CATransaction.commit()
-                
                 clearSelection()
             }
         }

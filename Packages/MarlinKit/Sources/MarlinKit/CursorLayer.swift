@@ -1,7 +1,7 @@
 import QuartzCore
 import SwiftUI
 
-class CursorLayer: CALayer {
+final class CursorLayer: CALayer {
     override var position: CGPoint {
         didSet {
             restartFade()
@@ -17,7 +17,7 @@ class CursorLayer: CALayer {
         backgroundColor = PlatformColor.tintColor.cgColor
 #endif
         zPosition = AdornmentLayerPriority.cursor
-        anchorPoint = .init(x: 0, y: 0)
+        anchorPoint = .init(x: 0.5, y: 0)
   
         setupFadeAnimation()
     }
@@ -32,7 +32,7 @@ class CursorLayer: CALayer {
             cursorLayer.backgroundColor = PlatformColor.tintColor.cgColor
 #endif
             cursorLayer.zPosition = AdornmentLayerPriority.cursor
-            cursorLayer.anchorPoint = .init(x: 0, y: 0)
+            cursorLayer.anchorPoint = .init(x: 0.5, y: 0)
         }
         setupFadeAnimation()
     }
@@ -48,6 +48,32 @@ extension CursorLayer {
         removeAllAnimations()
         setupFadeAnimation()
     }
+    
+#if os(iOS)
+    // scale the cursor up and back down to pulse it
+    // not really useful for the mac I don't think
+    public func pulseCursor() {
+        removeAllAnimations()
+        
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            self.restartFade()
+        }
+        
+        let pulseAnimation = CAKeyframeAnimation(keyPath: "transform.scale.xy")
+        pulseAnimation.duration = 0.3
+        pulseAnimation.values = [1, 3, 1]
+        pulseAnimation.keyTimes = [0, 0.5, 1]
+        
+        add(pulseAnimation, forKey:"pulse")
+        
+        CATransaction.commit()
+    }
+#endif // os(iOS)
 }
 
 private extension CursorLayer {
