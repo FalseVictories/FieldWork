@@ -18,6 +18,7 @@ public final class AppKitSampleView: NSView {
     
     private var selectionBackground: CALayer?
     private var selectionOutline: CALayer?
+    private var summedMagnificationLevel: UInt = 256;
     
     var sample: Sample? {
         didSet {
@@ -137,20 +138,8 @@ public final class AppKitSampleView: NSView {
         }
     }
     
-    /*
     public override func mouseDown(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
-        if event.buttonNumber == 0 {
-            cursorFrame = convertPointToFrame(locationInView)
-        }
-    }
-     */
-    
-    public override func mouseDown(with event: NSEvent) {
-        print("Left mouse down")
-        let locationInView = convert(event.locationInWindow, from: nil)
-        
-        var selectionRect = selectionToRect(selection: selection)
         
         var mouseLoc = locationInView
         let startPoint = locationInView
@@ -278,12 +267,9 @@ public final class AppKitSampleView: NSView {
         dragEvent = nil
     }
     
-    public override func mouseUp(with event: NSEvent) {
-        
-    }
-    
-    public override func mouseMoved(with event: NSEvent) {
-        
+    public override func magnify(with event: NSEvent) {
+        let newFramePerPixel = calculateFramesPerPixelForMagnification(event.magnification)
+        framesPerPixel = newFramePerPixel
     }
 }
 
@@ -307,6 +293,33 @@ private extension AppKitSampleView {
             
             waveformLayers.append(channelLayer)
         }
+    }
+    
+    func calculateFramesPerPixelForMagnification(_ magnification: CGFloat) -> UInt {
+        var fpp: UInt
+        var dfpp: CGFloat
+        let unwrappedFPP = UInt(framesPerPixel)
+        
+        if (unwrappedFPP > 256) {
+            dfpp = CGFloat(summedMagnificationLevel) * magnification
+        } else {
+            dfpp = CGFloat(unwrappedFPP) * magnification
+        }
+        
+        if (abs(dfpp) < 1) {
+            dfpp = (magnification < 0) ? -1 : 1
+        }
+        
+        fpp = UInt(Int((unwrappedFPP >= 256 ? summedMagnificationLevel : unwrappedFPP)) - Int(dfpp))
+        
+        fpp = min(max(fpp, 1), 65536)
+        
+        if (fpp >= 256) {
+            summedMagnificationLevel = fpp
+            fpp = (fpp / 256) * 256
+        }
+        
+        return fpp
     }
 }
 
@@ -369,47 +382,7 @@ private extension AppKitSampleView {
             }
         }
     }
-    
-    /*
-    func resizeSelection(_ event: NSEvent) {
-        let endPoint = convert(event.locationInWindow, from: nil)
-        var tmp = convertPointToFrame(endPoint)
-        var otherEnd: UInt64
-        
-        let oldSelectionRect = selectionToRect(selection: selection)
-        
-        // tmp = zxFrameForFrame(tmp)
-        
-        if tmp >= sample!.numberOfFrames {
-            tmp = sample!.numberOfFrames - 1
-        }
-        
-        // Handle handles
-        if selection.isEmpty {
-            otherEnd = tmp
-        } else {
-            otherEnd = selectionDirection == .left ? selection.selectedRange.upperBound : selection.selectedRange.lowerBound
-        }
-        
-        let newDirection: SelectionDirection = (tmp < otherEnd) ? .left : .right;
-        let directionChange = newDirection != selectionDirection
-        
-        let startFrame: UInt64
-        let endFrame: UInt64
-        if (otherEnd < tmp) {
-            startFrame = otherEnd
-            endFrame = tmp
-        } else {
-            startFrame = tmp
-            endFrame = otherEnd
-        }
-        
-        selectionDirection = newDirection
-        
-        delegate?.selectionChanged(selection: Selection(selectedRange: startFrame...endFrame))
-    }
-     */
-    
+
     func moveSelectionByOffset(_ offset: CGFloat) {
         /*
          NSUInteger offsetFrames = offset * _framesPerPixel;
