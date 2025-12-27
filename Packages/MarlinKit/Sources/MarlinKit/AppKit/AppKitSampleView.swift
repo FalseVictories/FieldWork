@@ -29,14 +29,14 @@ public final class AppKitSampleView: NSView {
             if sample.isLoaded {
                 invalidateIntrinsicContentSize()
                 setupWaveformLayers()
-
+                
                 needsDisplay = true
             } else {
                 // FIXME - observe isLoaded changing
             }
         }
     }
-
+    
     private var framesPerPixel: UInt = 256 {
         didSet {
             if framesPerPixel != oldValue {
@@ -59,7 +59,7 @@ public final class AppKitSampleView: NSView {
             framesPerPixel = fpp
         }
     }
-  
+    
     @Invalidating(.layout)
     var cursorFrame: UInt64 = 0 {
         didSet {
@@ -68,7 +68,7 @@ public final class AppKitSampleView: NSView {
             }
         }
     }
-        
+    
     init(withSample sample: Sample? = nil) {
         cursorLayer = CursorLayer()
         
@@ -90,6 +90,14 @@ public final class AppKitSampleView: NSView {
         }
         
         return ceil(CGFloat(sample.numberOfFrames) / CGFloat(framesPerPixel))
+    }
+    
+    public override var canBecomeKeyView: Bool {
+        true
+    }
+    
+    public override var acceptsFirstResponder: Bool {
+        true
     }
     
     public override var intrinsicContentSize: NSSize {
@@ -137,7 +145,14 @@ public final class AppKitSampleView: NSView {
             CATransaction.commit()
         }
     }
-    
+}
+
+// MARK: - Event handling
+extension AppKitSampleView {
+    // Mouse down starts an event processing loop and handles any
+    // subsequent events - move/drag/mouse down/up that happen
+    // inside it. If the mouse event leaves the waveform view it can
+    // start periodic events to enable scrolling
     public override func mouseDown(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
         
@@ -147,7 +162,7 @@ public final class AppKitSampleView: NSView {
         
         var insideSelection = false
         
-        // Need to handle resizing selection: see marlinx
+        window?.makeFirstResponder(self)
         
         let possibleStartFrame = convertPointToFrame(startPoint)
         insideSelection = selection.frameIsInsideSelection(possibleStartFrame)
@@ -271,10 +286,83 @@ public final class AppKitSampleView: NSView {
         let newFramePerPixel = calculateFramesPerPixelForMagnification(event.magnification)
         framesPerPixel = newFramePerPixel
     }
+    
+    public override func keyDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.numericPad) {
+            interpretKeyEvents([event])
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+    
+    public override func moveUp(_ sender: Any?) {
+    }
+    
+    public override func moveDown(_ sender: Any?) {
+    }
+    
+    public override func moveLeft(_ sender: Any?) {
+        guard let sample else {
+            return
+        }
+        
+        if selection.isEmpty {
+            cursorFrame = UInt64(max(0, min(Int(cursorFrame) - Int(framesPerPixel), Int(sample.numberOfFrames - 1))))
+            centre(onFrame: cursorFrame)
+        } else {
+            // move selection
+        }
+    }
+    
+    public override func moveRight(_ sender: Any?) {
+        guard let sample else {
+            return
+        }
+        
+        if selection.isEmpty {
+            cursorFrame = UInt64(max(0, min(Int(cursorFrame) + Int(framesPerPixel), Int(sample.numberOfFrames - 1))))
+            centre(onFrame: cursorFrame)
+        } else {
+            // move selection
+        }
+    }
+    
+    public override func moveWordRight(_ sender: Any?) {
+        // Move to next zero crossing frame
+    }
+    
+    public override func moveWordLeft(_ sender: Any?) {
+        // Move to previous zero crossing frame
+    }
+    
+    public override func moveToEndOfParagraph(_ sender: Any?) {
+        // Move to next marker
+    }
+    
+    public override func moveToBeginningOfParagraph(_ sender: Any?) {
+        // Move to previous marker
+    }
+    
+    public override func moveToEndOfDocument(_ sender: Any?) {
+        if let sample {
+            cursorFrame = sample.numberOfFrames - 1
+            centre(onFrame: cursorFrame)
+        }
+    }
+    
+    public override func moveToBeginningOfDocument(_ sender: Any?) {
+        cursorFrame = 0
+        centre(onFrame: cursorFrame)
+    }
+    
+    public override func selectAll(_ sender: Any?) {
+        if let sample {
+            selection = .init(startFrame: 0, endFrame: sample.numberOfFrames - 1)
+        }
+    }
 }
 
 private extension AppKitSampleView {
-    static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupWaveformLayers() {
         guard let sample else {
             return
@@ -293,6 +381,12 @@ private extension AppKitSampleView {
             
             waveformLayers.append(channelLayer)
         }
+    }
+    
+    func centre(onFrame frame: UInt64) {
+        let framePoint = convertFrameToPoint(frame)
+        let scrollPoint = CGPoint(x: framePoint.x - visibleRect.width / 2, y: framePoint.y)
+        scroll(scrollPoint)
     }
     
     func calculateFramesPerPixelForMagnification(_ magnification: CGFloat) -> UInt {
@@ -413,25 +507,18 @@ private extension AppKitSampleView {
     func selectRegionContainingFrame(_ frame: UInt64) {
         
     }
-    
-    func selectAll() {
-        if let sample = sample {
-            selection = Selection(0...sample.numberOfFrames)
-        }
-    }
 }
 
 // - MARK: Helpers
 private extension AppKitSampleView {
     func convertPointToFrame(_ point: NSPoint) -> UInt64 {
-        let scaledPoint = convertToBacking(point)
-        
+        let scaledPoint = point
         return (scaledPoint.x < 0) ? 0 : UInt64(scaledPoint.x) * UInt64(framesPerPixel)
     }
     
     func convertFrameToPoint(_ frame: UInt64) -> CGPoint {
         let scaledPoint = CGPoint(x: Double(frame / UInt64(framesPerPixel)), y: 0)
-        return convertFromBacking(scaledPoint)
+        return scaledPoint
     }
     
     func selectionToRect(selection: Selection) -> CGRect {
