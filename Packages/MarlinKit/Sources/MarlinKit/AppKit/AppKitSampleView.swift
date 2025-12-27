@@ -185,7 +185,8 @@ extension AppKitSampleView {
                 case .periodic:
                     if let dragEvent {
                         if !insideSelection {
-                            let locationInView = convert(nextEvent.locationInWindow, from: nil)
+                            // Expanding the selection while mouse pointer is outside view
+                            let locationInView = convert(dragEvent.locationInWindow, from: nil)
                             extendSelection(toFrame: convertPointToFrame(locationInView))
                         } else {
                             let newMouseLoc = convert(dragEvent.locationInWindow, from:nil)
@@ -227,6 +228,8 @@ extension AppKitSampleView {
                         dragged = true
                         if !insideSelection {
                             if selection.isEmpty {
+                                // Started a new selection, so create selection layers
+                                // and turn off the caret
                                 createSelectionLayers()
                                 cursorLayer.isHidden = true
                             }
