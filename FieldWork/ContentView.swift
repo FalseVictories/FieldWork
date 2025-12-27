@@ -8,6 +8,8 @@ struct ContentView: View {
     @State var text: String = ""
     @State var framesPerPixel: UInt = 256
     
+    @FocusState var sampleViewFocus
+    
     init() {
         let s = Sample()
         _sample = .init(initialValue: s)
@@ -31,6 +33,10 @@ struct ContentView: View {
             
             if sample.isLoaded {
                 SampleView(sample: sample, framesPerPixel: $framesPerPixel)
+                    .focused($sampleViewFocus)
+                    .onAppear {
+                        sampleViewFocus = true
+                    }
                 
                 HStack {
                     Button("Zoom In") {
