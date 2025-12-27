@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ContentView: View {
     static let sampleUrl = Bundle.main.url(forResource: "new-cascadia", withExtension: "flac")!
-    @State var sample: Sample
+    @State var sample: Sample?
     @State var text: String = ""
     @State var framesPerPixel: UInt = 256
     
@@ -17,7 +17,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            if !sample.isLoaded && sample.currentOperation == nil {
+            if let sample, !sample.isLoaded && sample.currentOperation == nil {
                 Button("Load Sample") {
                     Task {
                         try await sample.loadSample(from: Self.sampleUrl,
@@ -26,12 +26,12 @@ struct ContentView: View {
                 }
             }
             
-            if let operation = sample.currentOperation {
+            if let operation = sample?.currentOperation {
                 ProgressView(operation.title ?? "",
                              value: operation.progress, total: 1.0)
             }
             
-            if sample.isLoaded {
+            if let sample, sample.isLoaded {
                 SampleView(sample: sample, framesPerPixel: $framesPerPixel)
                     .focused($sampleViewFocus)
                     .onAppear {
