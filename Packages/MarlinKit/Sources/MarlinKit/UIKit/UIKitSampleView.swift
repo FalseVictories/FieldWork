@@ -8,6 +8,8 @@ public class UIKitSampleView: UIView {
     static let autoScrollMaxVelocityDefault: CGFloat = 4.0;
     static let autoScrollVelocityDefault: CGFloat = 0.1;
 
+    public weak var delegate: (any SampleViewDelegate)?
+
     private let cursorLayer: CursorLayer
     private var waveformLayers: [WaveformLayer] = []
     
@@ -46,7 +48,7 @@ public class UIKitSampleView: UIView {
         }
     }
     
-    private var framesPerPixel: Int = 256 {
+    private var framesPerPixel: UInt = 256 {
         didSet {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
@@ -54,13 +56,15 @@ public class UIKitSampleView: UIView {
                 setNeedsLayout()
                 
                 for waveformLayer in waveformLayers {
-                    waveformLayer.framesPerPixel = UInt(framesPerPixel)
+                    waveformLayer.framesPerPixel = framesPerPixel
                 }
+                
+                delegate?.framesPerPixelChanged(to: framesPerPixel)
             }
         }
     }
     
-    func setFramesPerPixel(_ fpp: Int) {
+    func setFramesPerPixel(_ fpp: UInt) {
         if fpp < 1 {
             framesPerPixel = 1
         } else if fpp > 2048 {
@@ -231,7 +235,7 @@ private extension UIKitSampleView {
             if abs(currentPinchScale) > 0.25 {
                 let newFPP = Double(framesPerPixel) * (currentPinchScale > 0 ? 0.5 : 2)
                 
-                setFramesPerPixel(Int(newFPP))
+                setFramesPerPixel(UInt(newFPP))
                 currentPinchScale = 0
             }
         }

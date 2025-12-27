@@ -4,6 +4,8 @@ import AppKit
 import Marlin
 
 public final class AppKitSampleView: NSView {
+    public weak var delegate: (any SampleViewDelegate)?
+    
     private let cursorLayer: CALayer
     private var waveformLayers: [WaveformLayer] = []
     
@@ -47,6 +49,8 @@ public final class AppKitSampleView: NSView {
                     waveformLayer.framesPerPixel = framesPerPixel
                 }
                 needsLayout = true
+                
+                delegate?.framesPerPixelChanged(to: framesPerPixel)
             }
         }
     }

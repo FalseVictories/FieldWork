@@ -21,6 +21,8 @@ public struct SampleView: PlatformViewControllerRepresentable {
     public func makeNSView(context: Context) -> AppKitSampleScrollView {
         let scrollView = AppKitSampleScrollView()
         scrollView.sampleView.sample = sample
+        scrollView.sampleView.delegate = context.coordinator
+        
         return scrollView
     }
     
@@ -34,13 +36,31 @@ public struct SampleView: PlatformViewControllerRepresentable {
     public func makeUIView(context: Context) -> UIKitSampleScrollView {
         let scrollView = UIKitSampleScrollView(frame: .zero)
         scrollView.sampleView.sample = sample
+        scrollView.sampleView.delegate = context.coordinator
+
         return scrollView
     }
     
     public func updateUIView(_ uiView: UIKitSampleScrollView,
                              context: Context) {
         let sampleView = uiView.sampleView
-        sampleView.setFramesPerPixel(Int(framesPerPixel))
+        sampleView.setFramesPerPixel(framesPerPixel)
     }
     #endif
+    
+    public class Coordinator : NSObject, SampleViewDelegate {
+        var parent: SampleView
+        
+        init(_ parent: SampleView) {
+            self.parent = parent
+        }
+        
+        public func framesPerPixelChanged(to framesPerPixel: UInt) {
+            parent.framesPerPixel = framesPerPixel
+        }
+    }
+    
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
 }
