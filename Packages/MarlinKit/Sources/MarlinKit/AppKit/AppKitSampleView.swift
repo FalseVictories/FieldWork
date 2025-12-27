@@ -261,7 +261,7 @@ extension AppKitSampleView {
                             selectRegionContainingFrame(possibleStartFrame)
                             return
                         } else if event.clickCount == 3 {
-                            selectAll()
+                            selectAll(nil)
                             return
                         }
                         
