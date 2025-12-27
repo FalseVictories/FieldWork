@@ -38,16 +38,15 @@ extension Sample {
     public func loadSample(from url: URL, withAudioLoader audioLoader: some AudioLoader) async throws {
         let operation = SampleOperation(title: "Loading Sample")
         currentOperation = operation
-//        Task { [unowned self] in
-            if let loadResult = try await (audioLoader.importSample(from: url, operation: operation) {
-                SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
-            }) {
-                self.channels = loadResult.channels
-                self.bitDepth = loadResult.bitDepth
-                self.sampleRate = loadResult.sampleRate
-
-                currentOperation = nil
-            }
-//        }
+        
+        if let loadResult = try await (audioLoader.importSample(from: url, operation: operation) {
+            SampleChannel(withSampleBlockFactory: self.sampleBlockFactory)
+        }) {
+            self.channels = loadResult.channels
+            self.bitDepth = loadResult.bitDepth
+            self.sampleRate = loadResult.sampleRate
+            
+            currentOperation = nil
+        }
     }
 }
