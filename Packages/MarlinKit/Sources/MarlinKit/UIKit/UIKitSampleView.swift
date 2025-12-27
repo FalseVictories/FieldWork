@@ -52,7 +52,6 @@ public class UIKitSampleView: UIView {
         didSet {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
-                setNeedsDisplay()
                 setNeedsLayout()
                 
                 for waveformLayer in waveformLayers {
