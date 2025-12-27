@@ -19,6 +19,31 @@ enum KnownColors: Int {
     case waveform = 3
 }
 
+
+/// Free function that returns the known color
+/// - Parameter color: the known color
+/// - Returns: the color as either a UIColor or NSColor
+func knownColor(_ color: KnownColors) -> PlatformColor {
+    guard color.rawValue < platformColors.count else {
+        return .systemPurple
+    }
+
+    return platformColors[color.rawValue]
+}
+
+/// Free function that returns the known color as a CGColor.
+/// For use with CALayer
+/// - Parameter color: the known color
+/// - Returns: the color as a CGColor
+func knownCGColor(_ color: KnownColors) -> CGColor {
+    guard color.rawValue < platformColors.count else {
+        return PlatformColor.systemPurple.cgColor
+    }
+
+    return platformColors[color.rawValue].cgColor
+}
+
+// The different colors used on the two platforms. Keep in sync
 #if os(macOS)
 private let platformColors: [PlatformColor] = [
     .tertiarySystemFill,
@@ -34,11 +59,3 @@ private let platformColors: [PlatformColor] = [
     .systemRed
 ]
 #endif
-
-func knownColor(_ color: KnownColors) -> PlatformColor {
-    platformColors[color.rawValue]
-}
-
-func knownCGColor(_ color: KnownColors) -> CGColor {
-    platformColors[color.rawValue].cgColor
-}

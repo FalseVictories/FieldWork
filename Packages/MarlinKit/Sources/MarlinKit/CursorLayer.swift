@@ -17,9 +17,12 @@ final class CursorLayer: CALayer {
         backgroundColor = PlatformColor.tintColor.cgColor
 #endif
         zPosition = AdornmentLayerPriority.cursor
+        
+        // Position the X anchor in the middle of the cursor so the
+        // pulse animation expands in both directions from the centre
         anchorPoint = .init(x: 0.5, y: 0)
   
-        setupFadeAnimation()
+        setupBlinkAnimation()
     }
     
     override init(layer: Any) {
@@ -34,7 +37,7 @@ final class CursorLayer: CALayer {
             cursorLayer.zPosition = AdornmentLayerPriority.cursor
             cursorLayer.anchorPoint = .init(x: 0.5, y: 0)
         }
-        setupFadeAnimation()
+        setupBlinkAnimation()
     }
     
     @available(*, unavailable)
@@ -46,7 +49,7 @@ final class CursorLayer: CALayer {
 extension CursorLayer {
     public func restartFade() {
         removeAllAnimations()
-        setupFadeAnimation()
+        setupBlinkAnimation()
     }
     
 #if os(iOS)
@@ -77,7 +80,8 @@ extension CursorLayer {
 }
 
 private extension CursorLayer {
-    func setupFadeAnimation() {
+    /// Setup the animation to blink the cursor
+    func setupBlinkAnimation() {
         let fadeAnimation = CAKeyframeAnimation(keyPath: "opacity")
         fadeAnimation.values = [1, 0, 0, 1]
         fadeAnimation.keyTimes = [0.3, 0.40, 0.6, 0.7]
