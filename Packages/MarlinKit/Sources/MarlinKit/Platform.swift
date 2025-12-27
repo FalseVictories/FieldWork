@@ -1,15 +1,19 @@
+import SwiftUI
+
 #if os(macOS)
 import AppKit
 
 typealias PlatformColor = NSColor
-public typealias PlatformViewController = NSViewController
 typealias PlatformSampleView = AppKitSampleView
+typealias PlatformScrollView = AppKitSampleScrollView
+public typealias PlatformViewControllerRepresentable = NSViewRepresentable
 #elseif os(iOS)
 import UIKit
 
 typealias PlatformColor = UIColor
-public typealias PlatformViewController = UIViewController
 typealias PlatformSampleView = UIKitSampleView
+typealias PlatformScrollView = UIKitSampleScrollView
+public typealias PlatformViewControllerRepresentable = UIViewRepresentable
 #endif
 
 enum KnownColors: Int {

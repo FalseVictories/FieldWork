@@ -1,12 +1,6 @@
 import SwiftUI
 import Marlin
 
-#if os(macOS)
-public typealias PlatformViewControllerRepresentable = NSViewRepresentable
-#elseif os(iOS)
-public typealias PlatformViewControllerRepresentable = UIViewRepresentable
-#endif
-
 public struct SampleView: PlatformViewControllerRepresentable {
     public let sample: Sample
     @Binding public var framesPerPixel: UInt
@@ -22,34 +16,22 @@ public struct SampleView: PlatformViewControllerRepresentable {
     
     #if os(macOS)
     public func makeNSView(context: Context) -> AppKitSampleScrollView {
-        let scrollView = AppKitSampleScrollView()
-        scrollView.sampleView.sample = sample
-        scrollView.sampleView.delegate = context.coordinator
-        
-        return scrollView
+        return makeSampleView(context: context)
     }
     
     public func updateNSView(_ view: AppKitSampleScrollView,
                              context: Context) {
-        let sampleView = view.sampleView
-        sampleView.setFramesPerPixel(framesPerPixel)
-        sampleView.cursorFrame = caretPosition
+        updateSampleView(view, context: context)
     }
     
     #elseif os(iOS)
     public func makeUIView(context: Context) -> UIKitSampleScrollView {
-        let scrollView = UIKitSampleScrollView(frame: .zero)
-        scrollView.sampleView.sample = sample
-        scrollView.sampleView.delegate = context.coordinator
-
-        return scrollView
+        makeSampleView(context: context)
     }
     
     public func updateUIView(_ uiView: UIKitSampleScrollView,
                              context: Context) {
-        let sampleView = uiView.sampleView
-        sampleView.setFramesPerPixel(framesPerPixel)
-        sampleView.cursorFrame = caretPosition
+        updateSampleView(uiView, context: context)
     }
     #endif
     
@@ -71,5 +53,21 @@ public struct SampleView: PlatformViewControllerRepresentable {
     
     public func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+}
+
+private extension SampleView {
+    func makeSampleView(context: Context) -> PlatformScrollView {
+        let scrollView = PlatformScrollView()
+        scrollView.sampleView.sample = sample
+        scrollView.sampleView.delegate = context.coordinator
+        
+        return scrollView
+    }
+    
+    func updateSampleView(_ view: PlatformScrollView, context: Context) {
+        let sampleView = view.sampleView
+        sampleView.setFramesPerPixel(framesPerPixel)
+        sampleView.cursorFrame = caretPosition
     }
 }
