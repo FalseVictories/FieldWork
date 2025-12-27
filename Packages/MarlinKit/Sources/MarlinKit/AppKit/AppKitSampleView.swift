@@ -228,10 +228,7 @@ extension AppKitSampleView {
                         dragged = true
                         if !insideSelection {
                             if selection.isEmpty {
-                                // Started a new selection, so create selection layers
-                                // and turn off the caret
-                                createSelectionLayers()
-                                cursorLayer.isHidden = true
+                                setupSelection()
                             }
                             
                             let locationInView = convert(nextEvent.locationInWindow, from: nil)
@@ -306,11 +303,7 @@ extension AppKitSampleView {
     }
     
     public override func keyDown(with event: NSEvent) {
-        if event.modifierFlags.contains(.numericPad) {
-            interpretKeyEvents([event])
-        } else {
-            super.keyDown(with: event)
-        }
+        interpretKeyEvents([event])
     }
     
     public override func moveUp(_ sender: Any?) {
@@ -320,15 +313,30 @@ extension AppKitSampleView {
     }
     
     public override func moveLeft(_ sender: Any?) {
-        guard let sample else {
-            return
-        }
-        
         if selection.isEmpty {
-            cursorFrame = UInt64(max(0, min(Int(cursorFrame) - Int(framesPerPixel), Int(sample.numberOfFrames - 1))))
+            cursorFrame = UInt64(max(0, Int(cursorFrame) - Int(framesPerPixel)))
             centre(onFrame: cursorFrame)
         } else {
-            // move selection
+            selection = .init(startFrame: selection.selectedRange.lowerBound - UInt64(framesPerPixel),
+                              endFrame: selection.selectedRange.upperBound - UInt64(framesPerPixel))
+        }
+    }
+    
+    public override func moveLeftAndModifySelection(_ sender: Any?) {
+        if selection.isEmpty {
+            let newFrame = UInt64(max(0, Int(cursorFrame) - Int(framesPerPixel)))
+            
+            setupSelection()
+            selection = .init(startFrame: newFrame, endFrame: cursorFrame)
+
+            extending = .start
+            centre(onFrame: cursorFrame)
+        } else {
+            let oldFrame = extending == .start ? selection.selectedRange.lowerBound : selection.selectedRange.upperBound
+            let newFrame = UInt64(max(0, Int(oldFrame) - Int(framesPerPixel)))
+            extendSelection(toFrame: newFrame)
+            
+            centre(onFrame: newFrame)
         }
     }
     
@@ -338,10 +346,33 @@ extension AppKitSampleView {
         }
         
         if selection.isEmpty {
-            cursorFrame = UInt64(max(0, min(Int(cursorFrame) + Int(framesPerPixel), Int(sample.numberOfFrames - 1))))
+            cursorFrame = UInt64(min(cursorFrame + UInt64(framesPerPixel), sample.numberOfFrames - 1))
             centre(onFrame: cursorFrame)
         } else {
-            // move selection
+            selection = .init(startFrame: selection.selectedRange.lowerBound + UInt64(framesPerPixel),
+                              endFrame: selection.selectedRange.upperBound + UInt64(framesPerPixel))
+        }
+    }
+    
+    public override func moveRightAndModifySelection(_ sender: Any?) {
+        guard let sample else {
+            return
+        }
+        
+        if selection.isEmpty {
+            let newFrame = UInt64(min(sample.numberOfFrames - 1, cursorFrame + UInt64(framesPerPixel)))
+            
+            setupSelection()
+            
+            extending = .end
+            selection = .init(startFrame: cursorFrame, endFrame: newFrame)
+            centre(onFrame: newFrame)
+        } else {
+            let oldFrame = extending == .start ? selection.selectedRange.lowerBound : selection.selectedRange.upperBound
+
+            let newFrame = UInt64(min(sample.numberOfFrames - 1, oldFrame + UInt64(framesPerPixel)))
+            extendSelection(toFrame: newFrame)
+            centre(onFrame: newFrame)
         }
     }
     
@@ -357,26 +388,91 @@ extension AppKitSampleView {
         // Move to next marker
     }
     
+    public override func moveToEndOfParagraphAndModifySelection(_ sender: Any?) {
+        // Extend selection to next marker
+    }
+    
     public override func moveToBeginningOfParagraph(_ sender: Any?) {
         // Move to previous marker
     }
     
+    public override func moveToBeginningOfParagraphAndModifySelection(_ sender: Any?) {
+        // extend selection to previous marker
+    }
+    
     public override func moveToEndOfDocument(_ sender: Any?) {
         if let sample {
-            cursorFrame = sample.numberOfFrames - 1
-            centre(onFrame: cursorFrame)
+            if selection.isEmpty {
+                cursorFrame = sample.numberOfFrames - 1
+                centre(onFrame: cursorFrame)
+            } else {
+                selection = selection.moveSelection(endingOn: sample.numberOfFrames - 1)
+                centre(onFrame: selection.selectedRange.upperBound)
+            }
         }
     }
     
-    public override func moveToBeginningOfDocument(_ sender: Any?) {
-        cursorFrame = 0
+    public override func moveToEndOfDocumentAndModifySelection(_ sender: Any?) {
+        guard let sample else {
+            return
+        }
+
+        // Extend selection to end of document
+        if selection.isEmpty {
+            setupSelection()
+
+            selection = .init(startFrame: cursorFrame, endFrame: sample.numberOfFrames - 1)
+        } else {
+            selection = .init(startFrame: selection.selectedRange.lowerBound,
+                              endFrame: sample.numberOfFrames - 1)
+        }
+
+        // the last edge moved is the new extending direction
+        extending = .end
+
         centre(onFrame: cursorFrame)
+    }
+    
+    public override func moveToBeginningOfDocument(_ sender: Any?) {
+        if selection.isEmpty {
+            cursorFrame = 0
+            centre(onFrame: cursorFrame)
+        } else {
+            selection = selection.moveSelection(startingOn: 0)
+            centre(onFrame: 0)
+        }
+    }
+    
+    public override func moveToBeginningOfDocumentAndModifySelection(_ sender: Any?) {
+        if selection.isEmpty {
+            setupSelection()
+            selection = .init(startFrame: 0, endFrame: cursorFrame)
+        } else {
+            selection = .init(startFrame: 0, endFrame: selection.selectedRange.upperBound)
+        }
+
+        // the last edge moved is the new extending direction
+        extending = .start
+
+        centre(onFrame: 0)
     }
     
     public override func selectAll(_ sender: Any?) {
         if let sample {
+            if selection.isEmpty {
+                setupSelection()
+            }
             selection = .init(startFrame: 0, endFrame: sample.numberOfFrames - 1)
         }
+    }
+    
+    public override func centerSelectionInVisibleArea(_ sender: Any?) {
+        if selection.isEmpty {
+            return
+        }
+        
+        let middleFrame = selection.selectedRange.lowerBound + UInt64(selection.selectedRange.count / 2)
+        centre(onFrame: middleFrame)
     }
 }
 
@@ -410,6 +506,16 @@ private extension AppKitSampleView {
 
 // - MARK: Selection
 private extension AppKitSampleView {
+    private func setupSelection() {
+        selectionBackground?.removeFromSuperlayer()
+        selectionOutline?.removeFromSuperlayer()
+        
+        // Started a new selection, so create selection layers
+        // and turn off the caret
+        createSelectionLayers()
+        cursorLayer.isHidden = true
+    }
+    
     func createSelectionLayers() {
         let selectionBackground = CALayer()
         selectionBackground.backgroundColor = knownCGColor(.selectionBackground)
