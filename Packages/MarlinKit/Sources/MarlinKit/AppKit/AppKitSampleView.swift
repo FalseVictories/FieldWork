@@ -16,7 +16,13 @@ public final class AppKitSampleView: NSView {
     private var extending: SelectionExtendingDirection = .end
     
     @Invalidating(.layout)
-    var selection: Selection = .zero
+    var selection: Selection = .zero {
+        didSet {
+            if selection != oldValue {
+                delegate?.selectionChanged(to: selection)
+            }
+        }
+    }
     
     private var selectionBackground: CALayer?
     private var selectionOutline: CALayer?

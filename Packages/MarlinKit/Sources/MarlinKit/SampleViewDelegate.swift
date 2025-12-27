@@ -3,4 +3,5 @@
 public protocol SampleViewDelegate: AnyObject {
     func framesPerPixelChanged(to framesPerPixel: UInt)
     func caretPositionChanged(to caretPosition: UInt64)
+    func selectionChanged(to selection: Selection)
 }
