@@ -70,6 +70,7 @@ public final class AppKitSampleView: NSView {
         didSet {
             if cursorFrame != oldValue {
                 clearSelection()
+                delegate?.caretPositionChanged(to: cursorFrame)
             }
         }
     }

@@ -7,6 +7,7 @@ struct ContentView: View {
     @State var sample: Sample?
     @State var text: String = ""
     @State var framesPerPixel: UInt = 256
+    @State var caretPosition: UInt64 = 0
     
     @FocusState var sampleViewFocus
     
@@ -32,7 +33,9 @@ struct ContentView: View {
             }
             
             if let sample, sample.isLoaded {
-                SampleView(sample: sample, framesPerPixel: $framesPerPixel)
+                SampleView(sample: sample,
+                           framesPerPixel: $framesPerPixel,
+                           caretPosition: $caretPosition)
                     .focused($sampleViewFocus)
                     .onAppear {
                         sampleViewFocus = true
@@ -49,8 +52,7 @@ struct ContentView: View {
                     }
                     
                     Spacer()
-                    
-                    Text("Frames Per Pixel: \(framesPerPixel)")
+                    Text("\(caretPosition) - Frames Per Pixel: \(framesPerPixel)")
                 }
                 
                 Text("Filename: \(Self.sampleUrl.lastPathComponent)")

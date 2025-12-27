@@ -80,6 +80,8 @@ public class UIKitSampleView: UIView {
                 cursorLayer.isHidden = false
                 
                 resetSelection()
+                
+                delegate?.caretPositionChanged(to: cursorFrame)
             }
         }
     }
