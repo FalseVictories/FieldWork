@@ -18,8 +18,9 @@ public final class AppKitSampleView: NSView {
     
     private var selectionBackground: CALayer?
     private var selectionOutline: CALayer?
-    private var summedMagnificationLevel: UInt = 256;
     
+    private var totalMagnification: CGFloat = 0
+
     var sample: Sample? {
         didSet {
             guard let sample else {
@@ -283,8 +284,18 @@ extension AppKitSampleView {
     }
     
     public override func magnify(with event: NSEvent) {
-        let newFramePerPixel = calculateFramesPerPixelForMagnification(event.magnification)
-        framesPerPixel = newFramePerPixel
+        if event.phase == .began {
+            totalMagnification = event.magnification
+        } else if event.phase == .changed {
+            totalMagnification += event.magnification
+            
+            if abs(totalMagnification) > 0.25 {
+                let newFPP = Double(framesPerPixel) * (totalMagnification > 0 ? 0.5 : 2)
+                
+                setFramesPerPixel(UInt(newFPP))
+                totalMagnification = 0
+            }
+        }
     }
     
     public override func keyDown(with event: NSEvent) {
@@ -387,33 +398,6 @@ private extension AppKitSampleView {
         let framePoint = convertFrameToPoint(frame)
         let scrollPoint = CGPoint(x: framePoint.x - visibleRect.width / 2, y: framePoint.y)
         scroll(scrollPoint)
-    }
-    
-    func calculateFramesPerPixelForMagnification(_ magnification: CGFloat) -> UInt {
-        var fpp: UInt
-        var dfpp: CGFloat
-        let unwrappedFPP = UInt(framesPerPixel)
-        
-        if (unwrappedFPP > 256) {
-            dfpp = CGFloat(summedMagnificationLevel) * magnification
-        } else {
-            dfpp = CGFloat(unwrappedFPP) * magnification
-        }
-        
-        if (abs(dfpp) < 1) {
-            dfpp = (magnification < 0) ? -1 : 1
-        }
-        
-        fpp = UInt(Int((unwrappedFPP >= 256 ? summedMagnificationLevel : unwrappedFPP)) - Int(dfpp))
-        
-        fpp = min(max(fpp, 1), 65536)
-        
-        if (fpp >= 256) {
-            summedMagnificationLevel = fpp
-            fpp = (fpp / 256) * 256
-        }
-        
-        return fpp
     }
 }
 
