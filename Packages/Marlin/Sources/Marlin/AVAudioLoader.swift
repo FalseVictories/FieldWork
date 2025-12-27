@@ -34,7 +34,19 @@ extension AVAudioLoader: AudioLoader {
         Logger.audioLoader.info("Format: \(format)")
         Logger.audioLoader.info("Frames: \(sourceFile.length)")
         
-        let newChannels = try (0..<format.channelCount).compactMap { _ in try channelBuilder() }
+        let newChannels = try (0..<format.channelCount).compactMap { channelNumber in
+            let channel = try channelBuilder()
+            
+            if format.channelCount == 1 {
+                channel.channelName = "Mono"
+            } else if format.channelCount == 2 {
+                channel.channelName = channelNumber == 0 ? "Left" : "Right"
+            } else {
+                // FIXME: Support surround sound channel layouts
+                channel.channelName = "Channel \(channelNumber)"
+            }
+            return channel
+        }
         
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
