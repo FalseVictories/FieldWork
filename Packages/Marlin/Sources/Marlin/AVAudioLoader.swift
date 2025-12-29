@@ -53,10 +53,13 @@ extension AVAudioLoader: AudioLoader {
         
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
-        
-        // Need to use the synchronous version of this because
-        // the await never completes.
-        player.scheduleFile(sourceFile, at: nil) {}
+
+        // If we just call player.scheduleFile() then clang
+        // generates an annoying warning about maybe using the
+        // async version of scheduleFile, but it doesn't do what
+        // we want. Wrapping player.scheduleFile inside a sync
+        // function eliminates the warning.
+        scheduleFile(sourceFile, onPlayerNode: player)
 
         do {
             let maxFrames: AVAudioFrameCount = Self.BUFFER_SIZE
@@ -147,5 +150,12 @@ extension AVAudioLoader: AudioLoader {
         return .init(bitDepth: fileFormat.settings[AVLinearPCMBitDepthKey] as? Int ?? 0,
                      sampleRate: format.sampleRate,
                      channels: newChannels)
+    }
+    
+    private func scheduleFile(_ sourceFile: AVAudioFile,
+                              onPlayerNode player: AVAudioPlayerNode) {
+        // Need to use the synchronous version of this because
+        // the await never completes.
+        player.scheduleFile(sourceFile, at: nil) {}
     }
 }
