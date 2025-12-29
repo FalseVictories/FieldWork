@@ -24,7 +24,10 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "MarlinKit",
-            dependencies: ["Marlin"]
+            dependencies: ["Marlin"],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
+            ]
         ),
         .testTarget(
             name: "MarlinKitTests",
