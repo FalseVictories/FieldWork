@@ -4,6 +4,11 @@ import UIKit
 import Marlin
 
 public class UIKitSampleView: UIView {
+    private enum SelectionModifier {
+        case extend
+        case move
+    }
+    
     static let autoScrollEdgeToleranceDefault: CGFloat = 80.0;
     static let autoScrollMaxVelocityDefault: CGFloat = 4.0;
     static let autoScrollVelocityDefault: CGFloat = 0.1;
@@ -19,6 +24,7 @@ public class UIKitSampleView: UIView {
 
     private var selecting: Bool = false
     private var hasSelection: Bool = false
+    private var selectionModifier: SelectionModifier = .extend
     
     private var extending: SelectionExtendingDirection = .end
 
@@ -256,36 +262,43 @@ private extension UIKitSampleView {
 
         switch recogniser.state {
         case .began:
-            resetSelection()
-            
-            selecting = true
-            extending = .end
             let startFrame = convertPointToFrame(recogniser.location(in: self))
-            selection = .init(startFrame: startFrame, endFrame: startFrame)
-            
-            // Move cursor to the start frame
-            cursorFrame = startFrame
-            createSelectionLayers()
-            
-            layoutIfNeeded() // Force the pending layout so the pulse won't get cancelled
-            cursorLayer.pulseCursor()
+            if !selection.frameIsInsideSelection(startFrame) {
+                // Starting a new selection
+                resetSelection()
+                
+                selecting = true
+                extending = .end
+                
+                selection = .init(startFrame: startFrame, endFrame: startFrame)
+                
+                // Move cursor to the start frame
+                cursorFrame = startFrame
+                createSelectionLayers()
+                
+                layoutIfNeeded() // Force the pending layout so the pulse won't get cancelled
+                cursorLayer.pulseCursor()
+                selectionModifier = .extend
+            } else {
+                selectionModifier = .move
+                lastDragFrame = startFrame
+            }
             
         case .changed:
-            let locationInView = recogniser.location(in: self)
-            let newSelectionEnd = convertPointToFrame(locationInView)
-            extendSelection(toFrame: newSelectionEnd)
-            
             cursorLayer.isHidden = true
             
+            let locationInView = recogniser.location(in: self)
             let locationInScrollview = recogniser.location(in: scrollView)
             
-            autoScroll(toLocationInView: locationInView,
-                       locationInScrollView: CGPoint(x: locationInScrollview.x - scrollView.contentOffset.x, y: 0),
-                       scrollView: scrollView)
+            adjustSelection(toLocationInView: locationInView,
+                            locationInScrollView: CGPoint(x: locationInScrollview.x - scrollView.contentOffset.x, y: 0),
+                            scrollView: scrollView,
+                            extendOrMove: selectionModifier)
             
         case .ended:
             selecting = false
             autoscrollCancelled()
+            lastDragFrame = 0
             
         default:
             break
@@ -356,19 +369,48 @@ private extension UIKitSampleView {
             }
         }
     }
+    
+    func moveSelection(byOffset offset: Int) {
+        guard let sample, !selection.isEmpty else {
+            return
+        }
+        
+        let newSelectionStart = Int(selection.selectedRange.lowerBound) + offset
+        if newSelectionStart < 0 {
+            return
+        }
+        
+        let newSelectionEnd = Int(selection.selectedRange.upperBound) + offset
+        if newSelectionEnd >= Int(sample.numberOfFrames) {
+            return
+        }
+        
+        selection = .init(startFrame: UInt64(newSelectionStart),
+                          endFrame: UInt64(newSelectionEnd))
+    }
 }
 
 // - MARK: Drag scroll
-private extension UIKitSampleView {
-    func autoScroll(toLocationInView locationInView: CGPoint,
-                    locationInScrollView: CGPoint,
-                    scrollView: UIScrollView) {
+extension UIKitSampleView {
+    private func adjustSelection(toLocationInView locationInView: CGPoint,
+                                 locationInScrollView: CGPoint,
+                                 scrollView: UIScrollView,
+                                 extendOrMove: SelectionModifier) {
         let contentOffset = scrollView.contentOffset
         
         lastDragPoint = locationInScrollView
-        lastDragFrame = convertPointToFrame(locationInView)
-        
-        extendSelection(toFrame: lastDragFrame)
+
+        if extendOrMove == .extend {
+            lastDragFrame = convertPointToFrame(locationInView)
+            extendSelection(toFrame: lastDragFrame)
+        } else {
+            let currentFrame = convertPointToFrame(locationInView)
+            let offset = Int(currentFrame) - Int(lastDragFrame)
+
+            moveSelection(byOffset: offset)
+
+            lastDragFrame = currentFrame
+        }
         
         // If the timer is running then we just need to wait for it to update
         // the selection
@@ -400,9 +442,15 @@ private extension UIKitSampleView {
                             
                             // Add the amount scrolled to the selection
                             let newDragFrame = Int64(lastDragFrame) + Int64(scrollDelta) * Int64(framesPerPixel)
-                            
-                            lastDragFrame = UInt64(max(newDragFrame, 0))
-                            extendSelection(toFrame: lastDragFrame)
+
+                            if extendOrMove == .extend {
+                                lastDragFrame = UInt64(max(newDragFrame, 0))
+                                extendSelection(toFrame: lastDragFrame)
+                            } else {
+                                let offset = Int(newDragFrame) - Int(lastDragFrame)
+                                moveSelection(byOffset: offset)
+                                lastDragFrame = UInt64(max(newDragFrame, 0))
+                            }
                         } else {
                             autoscrollCancelled()
                         }
