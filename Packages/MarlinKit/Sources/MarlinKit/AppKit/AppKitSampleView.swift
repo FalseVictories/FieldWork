@@ -580,30 +580,25 @@ private extension AppKitSampleView {
     }
 
     func moveSelectionByOffset(_ offset: CGFloat) {
-        /*
-         NSUInteger offsetFrames = offset * _framesPerPixel;
-         NSRect oldSelectionRect = [self selectionToRect];
-         NSUInteger frameCount = _selectionEndFrame - _selectionStartFrame;
-         
-         _selectionStartFrame += offsetFrames;
-         _selectionEndFrame += offsetFrames;
-         
-         if (((NSInteger)_selectionStartFrame) < 0) {
-         _selectionStartFrame = 0;
-         _selectionEndFrame = frameCount;
-         } else if (_selectionEndFrame >= [_sample numberOfFrames]) {
-         _selectionEndFrame = [_sample numberOfFrames] - 1;
-         _selectionStartFrame = _selectionEndFrame - frameCount;
-         }
-         
-         _selectionStartFrame = [self zxFrameForFrame:_selectionStartFrame];
-         _selectionEndFrame = [self zxFrameForFrame:_selectionEndFrame];
-         
-         NSRect newSelectionRect = [self selectionToRect];
-         
-         [self updateSelection:newSelectionRect
-         oldSelectionRect:oldSelectionRect];
-         */
+        guard let sample else {
+            return
+        }
+        
+        let offsetFrames = Int(offset) * Int(framesPerPixel)
+
+        // Can't drag to shrink the selection by going outside of
+        // valid range
+        let newStartFrame: Int64 = Int64(selection.selectedRange.lowerBound) + Int64(offsetFrames)
+        if newStartFrame < 0 {
+            return
+        }
+        
+        let newEndFrame = Int64(selection.selectedRange.upperBound) + Int64(offsetFrames)
+        if newEndFrame >= sample.numberOfFrames {
+            return
+        }
+        
+        selection = .init(startFrame: UInt64(newStartFrame), endFrame: UInt64(newEndFrame))
     }
     
     func selectRegionContainingFrame(_ frame: UInt64) {
