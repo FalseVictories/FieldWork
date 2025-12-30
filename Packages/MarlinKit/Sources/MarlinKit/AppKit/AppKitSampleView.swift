@@ -259,8 +259,6 @@ extension AppKitSampleView {
                         }
                         
                         clearSelection()
-                        //                    selectionChanged()
-                        
                         cursorFrame = possibleStartFrame
                     }
                     return
