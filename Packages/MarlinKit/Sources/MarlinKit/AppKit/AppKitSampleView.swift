@@ -191,18 +191,10 @@ extension AppKitSampleView {
                 switch nextEvent.type {
                 case .periodic:
                     if let dragEvent {
-                        if !insideSelection {
-                            // Expanding the selection while mouse pointer is outside view
-                            let locationInView = convert(dragEvent.locationInWindow, from: nil)
-                            extendSelection(toFrame: convertPointToFrame(locationInView))
-                        } else {
-                            let newMouseLoc = convert(dragEvent.locationInWindow, from:nil)
-                            let dx = newMouseLoc.x - lastPoint.x
-                            let scaleDX = convertToBacking(NSPoint(x: dx, y: 0))
-                            
-                            moveSelectionByOffset(scaleDX.x)
-                            lastPoint = newMouseLoc
-                        }
+                        lastPoint = handleDragEvent(dragEvent,
+                                                    withOldLocation: lastPoint,
+                                                    insideSelection: insideSelection)
+
                         autoscroll(with: dragEvent)
                     }
                     break
@@ -233,20 +225,9 @@ extension AppKitSampleView {
                     
                     if mouseLoc.x != startPoint.x {
                         dragged = true
-                        if !insideSelection {
-                            if selection.isEmpty {
-                                setupSelection()
-                            }
-                            
-                            let locationInView = convert(nextEvent.locationInWindow, from: nil)
-                            extendSelection(toFrame: convertPointToFrame(locationInView))
-                        } else {
-                            let dx = mouseLoc.x - lastPoint.x
-                            let scaledDX = convertToBacking(NSPoint(x: dx, y: 0))
-                            moveSelectionByOffset(scaledDX.x)
-                            
-                            lastPoint = mouseLoc
-                        }
+                        lastPoint = handleDragEvent(nextEvent,
+                                                    withOldLocation: lastPoint,
+                                                    insideSelection: insideSelection)
                     }
                     break
                     
@@ -292,6 +273,25 @@ extension AppKitSampleView {
             nextEvent = window?.nextEvent(matching: eventMask)
         }
         dragEvent = nil
+    }
+    
+    private func handleDragEvent(_ event: NSEvent,
+                                 withOldLocation lastPoint: CGPoint,
+                                 insideSelection: Bool) -> CGPoint {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        
+        if !insideSelection {
+            if selection.isEmpty {
+                setupSelection()
+            }
+            
+            extendSelection(toFrame: convertPointToFrame(locationInView))
+        } else {
+            let dx = locationInView.x - lastPoint.x
+            moveSelectionByOffset(dx)
+        }
+        
+        return locationInView
     }
     
     public override func magnify(with event: NSEvent) {
