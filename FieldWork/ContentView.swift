@@ -34,15 +34,18 @@ struct ContentView: View {
             }
             
             if let sample, sample.isLoaded {
-                SampleView(sample: sample,
-                           framesPerPixel: $framesPerPixel,
-                           caretPosition: $caretPosition,
-                           selection: $selection)
+                VStack {
+                    OverviewBar(sample: sample,
+                                selection: $selection)
+                    SampleView(sample: sample,
+                               framesPerPixel: $framesPerPixel,
+                               caretPosition: $caretPosition,
+                               selection: $selection)
                     .focused($sampleViewFocus)
                     .onAppear {
                         sampleViewFocus = true
                     }
-                
+                }
                 HStack {
                     Button("Zoom In") {
                         let newFramesPerPixel = framesPerPixel / 2

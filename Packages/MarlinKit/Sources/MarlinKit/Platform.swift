@@ -6,6 +6,7 @@ import AppKit
 typealias PlatformColor = NSColor
 typealias PlatformSampleView = AppKitSampleView
 typealias PlatformScrollView = AppKitSampleScrollView
+typealias PlatformOverviewBar = AppKitOverviewBar
 public typealias PlatformViewControllerRepresentable = NSViewRepresentable
 #elseif os(iOS)
 import UIKit
@@ -13,6 +14,7 @@ import UIKit
 typealias PlatformColor = UIColor
 typealias PlatformSampleView = UIKitSampleView
 typealias PlatformScrollView = UIKitSampleScrollView
+typealias PlatformOverviewBar = UIKitOverviewBar
 public typealias PlatformViewControllerRepresentable = UIViewRepresentable
 #endif
 

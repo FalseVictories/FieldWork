@@ -51,8 +51,8 @@ public final class AppKitSampleView: NSView {
             if framesPerPixel != oldValue {
                 invalidateIntrinsicContentSize()
                 
-                for waveformLayer in waveformLayers {
-                    waveformLayer.framesPerPixel = framesPerPixel
+                waveformLayers.forEach {
+                    $0.framesPerPixel = framesPerPixel
                 }
                 needsLayout = true
                 
@@ -125,16 +125,14 @@ public final class AppKitSampleView: NSView {
         
         let channelCount = sample.channels.count
         
-        var channelNumber = 0
         let channelHeight = (Int(frame.height) - (5 * (channelCount - 1))) / channelCount
         
-        for waveformLayer in waveformLayers {
+        for (channelNumber, waveformLayer) in waveformLayers.enumerated() {
             // Flip the channel positions so channel 0 is at the top and channel 1 below
             let channelY = Int(frame.height) - (channelHeight * (channelNumber + 1) + (5 * channelNumber))
             
             waveformLayer.frame = CGRect(x: 0, y: channelY,
                                          width: Int(width), height: channelHeight)
-            channelNumber += 1
         }
         
         let cursorPoint = convertFrameToPoint(cursorFrame)
@@ -489,14 +487,12 @@ private extension AppKitSampleView {
         
         waveformLayers = []
         
-        var channelNumber = 0
         for channel in sample.channels {
             let channelLayer = WaveformLayer(channel: channel,
                                              initialFramesPerPixel: framesPerPixel)
             
             channelLayer.zPosition = AdornmentLayerPriority.waveform
             layer?.addSublayer(channelLayer)
-            channelNumber += 1
             
             waveformLayers.append(channelLayer)
         }
@@ -543,6 +539,10 @@ private extension AppKitSampleView {
     func clearSelection() {
         selectionBackground?.removeFromSuperlayer()
         selectionOutline?.removeFromSuperlayer()
+        
+        selectionBackground = nil
+        selectionOutline = nil
+        
         selection = .zero
         cursorLayer.isHidden = false
     }
