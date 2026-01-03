@@ -55,19 +55,7 @@ public final class AppKitSampleView: NSView {
                     $0.framesPerPixel = framesPerPixel
                 }
                 needsLayout = true
-                
-                delegate?.framesPerPixelChanged(to: framesPerPixel)
             }
-        }
-    }
-    
-    public func setFramesPerPixel(_ fpp: UInt) {
-        if fpp < 1 {
-            framesPerPixel = 1
-        } else if fpp > 2048 {
-            framesPerPixel = 2048
-        } else {
-            framesPerPixel = fpp
         }
     }
     
@@ -299,7 +287,7 @@ extension AppKitSampleView {
             if abs(totalMagnification) > 0.25 {
                 let newFPP = Double(framesPerPixel) * (totalMagnification > 0 ? 0.5 : 2)
                 
-                setFramesPerPixel(UInt(newFPP))
+                notifyFramesPerPixelChanged(UInt(newFPP))
                 totalMagnification = 0
             }
         }
@@ -479,6 +467,19 @@ extension AppKitSampleView {
     }
 }
 
+// MARK: - Public API
+extension AppKitSampleView {
+    public func setFramesPerPixel(_ fpp: UInt) {
+        if fpp < 1 {
+            framesPerPixel = 1
+        } else if fpp > 2048 {
+            framesPerPixel = 2048
+        } else {
+            framesPerPixel = fpp
+        }
+    }
+}
+
 private extension AppKitSampleView {
     func setupWaveformLayers() {
         guard let sample else {
@@ -502,6 +503,10 @@ private extension AppKitSampleView {
         let framePoint = convertFrameToPoint(frame)
         let scrollPoint = CGPoint(x: framePoint.x - visibleRect.width / 2, y: framePoint.y)
         scroll(scrollPoint)
+    }
+    
+    func notifyFramesPerPixelChanged(_ framesPerPixel: UInt) {
+        delegate?.framesPerPixelChanged(to: framesPerPixel)
     }
 }
 

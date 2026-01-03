@@ -69,19 +69,7 @@ public class UIKitSampleView: UIView {
                 for waveformLayer in waveformLayers {
                     waveformLayer.framesPerPixel = framesPerPixel
                 }
-                
-                delegate?.framesPerPixelChanged(to: framesPerPixel)
             }
-        }
-    }
-    
-    func setFramesPerPixel(_ fpp: UInt) {
-        if fpp < 1 {
-            framesPerPixel = 1
-        } else if fpp > 2048 {
-            framesPerPixel = 2048
-        } else {
-            framesPerPixel = fpp
         }
     }
   
@@ -171,6 +159,19 @@ public class UIKitSampleView: UIView {
     }
 }
 
+// MARK: - public API
+public extension UIKitSampleView {
+    func setFramesPerPixel(_ fpp: UInt) {
+        if fpp < 1 {
+            framesPerPixel = 1
+        } else if fpp > 2048 {
+            framesPerPixel = 2048
+        } else {
+            framesPerPixel = fpp
+        }
+    }
+}
+
 private extension UIKitSampleView {
     static var channelColors: [PlatformColor] = [.systemRed, .systemBlue, .systemGreen]
     func setupLayers() {
@@ -190,6 +191,10 @@ private extension UIKitSampleView {
             
             channelNumber += 1
         }
+    }
+    
+    func notifyFramesPerPixelChanged(_ framesPerPixel: UInt) {
+        delegate?.framesPerPixelChanged(to: framesPerPixel)
     }
 }
 
@@ -248,7 +253,7 @@ private extension UIKitSampleView {
             if abs(currentPinchScale) > 0.25 {
                 let newFPP = Double(framesPerPixel) * (currentPinchScale > 0 ? 0.5 : 2)
                 
-                setFramesPerPixel(UInt(newFPP))
+                notifyFramesPerPixelChanged(UInt(newFPP))
                 currentPinchScale = 0
             }
         }
