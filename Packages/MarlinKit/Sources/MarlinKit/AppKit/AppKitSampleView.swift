@@ -64,7 +64,6 @@ public final class AppKitSampleView: NSView {
         didSet {
             if cursorFrame != oldValue {
                 clearSelection()
-                delegate?.caretPositionChanged(to: cursorFrame)
             }
         }
     }
@@ -245,7 +244,7 @@ extension AppKitSampleView {
                         }
                         
                         clearSelection()
-                        cursorFrame = possibleStartFrame
+                        notifyCaretFrameChanged(possibleStartFrame)
                     }
                     return
                     
@@ -305,8 +304,10 @@ extension AppKitSampleView {
     
     public override func moveLeft(_ sender: Any?) {
         if selection.isEmpty {
-            cursorFrame = UInt64(max(0, Int(cursorFrame) - Int(framesPerPixel)))
-            centre(onFrame: cursorFrame)
+            let newCursorFrame = UInt64(max(0, Int(cursorFrame) - Int(framesPerPixel)))
+            
+            notifyCaretFrameChanged(newCursorFrame)
+            centre(onFrame: newCursorFrame)
         } else {
             selection = .init(startFrame: selection.selectedRange.lowerBound - UInt64(framesPerPixel),
                               endFrame: selection.selectedRange.upperBound - UInt64(framesPerPixel))
@@ -337,8 +338,10 @@ extension AppKitSampleView {
         }
         
         if selection.isEmpty {
-            cursorFrame = UInt64(min(cursorFrame + UInt64(framesPerPixel), sample.numberOfFrames - 1))
-            centre(onFrame: cursorFrame)
+            let newCursorFrame = UInt64(min(cursorFrame + UInt64(framesPerPixel), sample.numberOfFrames - 1))
+            
+            notifyCaretFrameChanged(newCursorFrame)
+            centre(onFrame: newCursorFrame)
         } else {
             selection = .init(startFrame: selection.selectedRange.lowerBound + UInt64(framesPerPixel),
                               endFrame: selection.selectedRange.upperBound + UInt64(framesPerPixel))
@@ -394,8 +397,10 @@ extension AppKitSampleView {
     public override func moveToEndOfDocument(_ sender: Any?) {
         if let sample {
             if selection.isEmpty {
-                cursorFrame = sample.numberOfFrames - 1
-                centre(onFrame: cursorFrame)
+                let newCursorFrame = sample.numberOfFrames - 1
+                
+                notifyCaretFrameChanged(newCursorFrame)
+                centre(onFrame: newCursorFrame)
             } else {
                 selection = selection.moveSelection(endingOn: sample.numberOfFrames - 1)
                 centre(onFrame: selection.selectedRange.upperBound)
@@ -426,8 +431,8 @@ extension AppKitSampleView {
     
     public override func moveToBeginningOfDocument(_ sender: Any?) {
         if selection.isEmpty {
-            cursorFrame = 0
-            centre(onFrame: cursorFrame)
+            notifyCaretFrameChanged(0)
+            centre(onFrame: 0)
         } else {
             selection = selection.moveSelection(startingOn: 0)
             centre(onFrame: 0)
@@ -507,6 +512,10 @@ private extension AppKitSampleView {
     
     func notifyFramesPerPixelChanged(_ framesPerPixel: UInt) {
         delegate?.framesPerPixelChanged(to: framesPerPixel)
+    }
+    
+    func notifyCaretFrameChanged(_ caretFrame: UInt64) {
+        delegate?.caretPositionChanged(to: caretFrame)
     }
 }
 

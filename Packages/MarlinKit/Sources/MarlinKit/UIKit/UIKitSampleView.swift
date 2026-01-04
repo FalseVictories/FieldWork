@@ -80,8 +80,6 @@ public class UIKitSampleView: UIView {
                 cursorLayer.isHidden = false
                 
                 resetSelection()
-                
-                delegate?.caretPositionChanged(to: cursorFrame)
             }
         }
     }
@@ -196,6 +194,10 @@ private extension UIKitSampleView {
     func notifyFramesPerPixelChanged(_ framesPerPixel: UInt) {
         delegate?.framesPerPixelChanged(to: framesPerPixel)
     }
+    
+    func notifyCaretFrameChanged(_ caretFrame: UInt64) {
+        delegate?.caretPositionChanged(to: caretFrame)
+    }
 }
 
 // - MARK: Gesture recognisers
@@ -228,7 +230,7 @@ private extension UIKitSampleView {
         if recogniser.state == .ended {
             let locationInView = recogniser.location(in: self)
             
-            cursorFrame = convertPointToFrame(locationInView)
+            notifyCaretFrameChanged(convertPointToFrame(locationInView))
         }
     }
     
@@ -278,7 +280,7 @@ private extension UIKitSampleView {
                 selection = .init(startFrame: startFrame, endFrame: startFrame)
                 
                 // Move cursor to the start frame
-                cursorFrame = startFrame
+                notifyCaretFrameChanged(startFrame)
                 createSelectionLayers()
                 
                 layoutIfNeeded() // Force the pending layout so the pulse won't get cancelled
